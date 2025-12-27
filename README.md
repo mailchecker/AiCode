@@ -136,17 +136,66 @@
 - OpenAI API 키
 - (선택) Upstage API 키
 
-### 1. 저장소 클론
+### 빠른 시작
+
+#### Linux / macOS
+
+```bash
+# 1. 저장소 클론
+git clone <repository-url>
+cd AiCode
+
+# 2. 환경 변수 설정
+cp .env.example .env
+# .env 파일을 편집하여 OpenAI API 키 추가
+
+# 3. 시스템 시작
+./start.sh
+```
+
+#### Windows
+
+```cmd
+REM 1. 저장소 클론
+git clone <repository-url>
+cd AiCode
+
+REM 2. 환경 변수 설정
+copy .env.example .env
+REM .env 파일을 편집하여 OpenAI API 키 추가
+
+REM 3. 시스템 시작 (더블클릭 또는)
+start.bat
+```
+
+**Windows 사용자**: 자세한 설치 가이드는 [`WINDOWS_SETUP.md`](WINDOWS_SETUP.md)를 참고하세요.
+
+### 상세 설치 단계
+
+#### 1. 저장소 클론
 
 ```bash
 git clone <repository-url>
 cd AiCode
 ```
 
-### 2. 환경 변수 설정
+#### 2. 환경 변수 설정
 
 `.env` 파일을 수정하여 필수 API 키를 설정하세요:
 
+**Linux/macOS:**
+```bash
+cp .env.example .env
+nano .env  # 또는 원하는 에디터 사용
+```
+
+**Windows:**
+```cmd
+copy .env.example .env
+notepad .env
+```
+
+**필수 설정:**
 ```bash
 # OpenAI API 키 (필수)
 OPENAI_API_KEY=your_openai_api_key_here
@@ -155,8 +204,9 @@ OPENAI_API_KEY=your_openai_api_key_here
 UPSTAGE_API_KEY=your_upstage_api_key_here
 ```
 
-### 3. Docker Compose 실행
+#### 3. Docker Compose 실행
 
+**Linux/macOS:**
 ```bash
 # 전체 시스템 시작
 docker-compose up -d
@@ -168,7 +218,19 @@ docker-compose logs -f
 docker-compose restart backend
 ```
 
-### 4. 서비스 접속
+**Windows:**
+```cmd
+REM 전체 시스템 시작
+docker-compose up -d
+
+REM 로그 확인
+docker-compose logs -f
+
+REM 특정 서비스만 재시작
+docker-compose restart backend
+```
+
+#### 4. 서비스 접속
 
 - **Streamlit UI**: http://localhost:8501
 - **FastAPI Docs**: http://localhost:8000/docs
@@ -262,11 +324,16 @@ AiCode/
 │   └── Dockerfile
 ├── tests/
 │   ├── test_data/
-│   └── test_scenarios.md
+│   ├── test_scenarios.md
+│   └── create_sample_pdf.py
 ├── docker-compose.yml
+├── start.sh              # Linux/macOS 시작 스크립트
+├── start.bat             # Windows 시작 스크립트
 ├── .env
 ├── .env.example
-└── README.md
+├── .gitignore
+├── README.md
+└── WINDOWS_SETUP.md      # Windows 전용 설치 가이드
 ```
 
 ## 주요 설정
@@ -353,6 +420,9 @@ LLM_MAX_TOKENS=1000     # 최대 토큰
 ES_JAVA_OPTS=-Xms2g -Xmx2g
 ```
 
+**Windows**: Docker Desktop 설정에서 메모리를 6GB 이상으로 증가
+- Docker Desktop → Settings → Resources → Memory
+
 ### Celery Worker 재시작
 
 ```bash
@@ -379,6 +449,25 @@ docker-compose down -v
 # 재시작
 docker-compose up -d
 ```
+
+### Windows 전용 문제 해결
+
+#### Docker Desktop이 시작되지 않는 경우
+1. WSL 2 설치 확인: `wsl --list --verbose`
+2. WSL 2 업데이트: `wsl --update`
+3. Windows 업데이트 확인
+
+#### 포트 충돌 오류
+```cmd
+REM 사용 중인 포트 확인
+netstat -ano | findstr :8000
+netstat -ano | findstr :8501
+
+REM 프로세스 종료
+taskkill /PID <프로세스ID> /F
+```
+
+자세한 Windows 문제 해결은 [`WINDOWS_SETUP.md`](WINDOWS_SETUP.md)를 참고하세요.
 
 ## 성능 최적화
 
