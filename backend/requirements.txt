@@ -1,0 +1,46 @@
+# FastAPI
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# Database
+sqlalchemy==2.0.25
+alembic==1.13.1
+
+# Async & Task Queue
+celery==5.3.6
+redis==5.0.1
+
+# MinIO (S3 Compatible)
+minio==7.2.3
+
+# Elasticsearch
+elasticsearch==8.12.0
+
+# PDF Parsing
+PyPDF2==3.0.1
+pdfplumber==0.11.0
+pymupdf==1.23.26
+
+# Haystack
+haystack-ai==2.0.0
+sentence-transformers==2.3.1
+
+# Embeddings
+torch==2.1.2
+transformers==4.37.2
+openai==1.10.0
+
+# LLM
+tiktoken==0.5.2
+
+# Utilities
+python-dotenv==1.0.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+httpx==0.26.0
+tenacity==8.2.3
+python-json-logger==2.0.7
+
+# Hashing
+hashlib-additional==1.0.0

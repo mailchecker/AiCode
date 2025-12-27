@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # MinIO - S3-compatible object storage
+  minio:
+    image: minio/minio:latest
+    container_name: pdf-rag-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis - Message broker and result backend
+  redis:
+    image: redis:7-alpine
+    container_name: pdf-rag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Elasticsearch - Search engine
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: pdf-rag-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pdf-rag-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend/app:/app/app
+      - backend_data:/app/data
+    depends_on:
+      - minio
+      - redis
+      - elasticsearch
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker - Parse Queue
+  celery-parse:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pdf-rag-celery-parse
+    env_file:
+      - .env
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend/app:/app/app
+      - backend_data:/app/data
+    depends_on:
+      - redis
+      - minio
+    command: celery -A app.tasks.celery_app worker --loglevel=info --queues=parse_queue --concurrency=2
+
+  # Celery Worker - Index Queue
+  celery-index:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pdf-rag-celery-index
+    env_file:
+      - .env
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - REDIS_URL=redis://redis:6379/0
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./backend/app:/app/app
+      - backend_data:/app/data
+    depends_on:
+      - redis
+      - elasticsearch
+    command: celery -A app.tasks.celery_app worker --loglevel=info --queues=index_queue --concurrency=2
+
+  # Frontend - Streamlit UI
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pdf-rag-frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+
+volumes:
+  minio_data:
+  redis_data:
+  es_data:
+  backend_data:
