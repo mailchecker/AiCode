@@ -72,15 +72,18 @@ services:
       - ./backend/app:/app/app
       - backend_data:/app/data
     depends_on:
-      - minio
-      - redis
-      - elasticsearch
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 90s
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   # Celery Worker - Parse Queue
