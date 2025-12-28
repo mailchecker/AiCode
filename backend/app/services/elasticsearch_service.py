@@ -21,36 +21,45 @@ class ElasticsearchService:
 
     def _ensure_index(self):
         """Ensure index exists with proper mappings."""
-        if self.client.indices.exists(index=self.index_name):
-            logger.info(f"Index {self.index_name} already exists")
-            return
+        try:
+            if self.client.indices.exists(index=self.index_name):
+                logger.info(f"Index {self.index_name} already exists")
+                return
 
-        # Get embedding dimension from service
-        embedding_dim = self.embedding_service.get_dimension()
+            # Get embedding dimension from service
+            embedding_dim = self.embedding_service.get_dimension()
 
-        # Index mappings
-        mappings = {
-            "properties": {
-                "chunk_id": {"type": "keyword"},
-                "doc_id": {"type": "keyword"},
-                "version_id": {"type": "keyword"},
-                "text": {"type": "text", "analyzer": "standard"},
-                "embedding": {
-                    "type": "dense_vector",
-                    "dims": embedding_dim,
-                    "index": True,
-                    "similarity": "cosine",
-                },
-                "page_start": {"type": "integer"},
-                "page_end": {"type": "integer"},
-                "section_path": {"type": "keyword"},
-                "source_type": {"type": "keyword"},
-                "created_at": {"type": "date"},
+            # Index mappings
+            mappings = {
+                "properties": {
+                    "chunk_id": {"type": "keyword"},
+                    "doc_id": {"type": "keyword"},
+                    "version_id": {"type": "keyword"},
+                    "text": {"type": "text", "analyzer": "standard"},
+                    "embedding": {
+                        "type": "dense_vector",
+                        "dims": embedding_dim,
+                        "index": True,
+                        "similarity": "cosine",
+                    },
+                    "page_start": {"type": "integer"},
+                    "page_end": {"type": "integer"},
+                    "section_path": {"type": "keyword"},
+                    "source_type": {"type": "keyword"},
+                    "created_at": {"type": "date"},
+                }
             }
-        }
 
-        self.client.indices.create(index=self.index_name, mappings=mappings)
-        logger.info(f"Created index {self.index_name} with embedding dimension {embedding_dim}")
+            self.client.indices.create(index=self.index_name, mappings=mappings)
+            logger.info(f"Created index {self.index_name} with embedding dimension {embedding_dim}")
+
+        except Exception as e:
+            # Handle race condition where index was created between check and create
+            if "resource_already_exists_exception" in str(e):
+                logger.info(f"Index {self.index_name} was created by another process")
+            else:
+                logger.error(f"Error ensuring index: {e}")
+                raise
 
     def index_chunks(self, chunks: List[Dict[str, Any]]):
         """
