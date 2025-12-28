@@ -2,10 +2,15 @@
 import streamlit as st
 import requests
 import time
+import os
 from typing import Optional
 
 # API Configuration
-API_BASE_URL = st.secrets.get("API_BASE_URL", "http://localhost:8000")
+# Try to get from secrets, fall back to environment variable, then default
+try:
+    API_BASE_URL = st.secrets.get("API_BASE_URL", "http://localhost:8000")
+except FileNotFoundError:
+    API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 
 def upload_document(file, title: str, parse_provider: str):
