@@ -22,13 +22,17 @@ PyPDF2==3.0.1
 pdfplumber==0.11.0
 pymupdf==1.23.26
 
+# NumPy (must be <2 for compatibility)
+numpy<2
+
 # Haystack
 haystack-ai==2.0.0
-sentence-transformers==2.3.1
+sentence-transformers>=3.0.0
 
 # Embeddings
-torch==2.1.2
-transformers==4.37.2
+torch>=2.0.0
+transformers>=4.36.0
+tokenizers>=0.15.0
 openai==1.10.0
 
 # LLM
