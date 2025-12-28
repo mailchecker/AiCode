@@ -5,12 +5,16 @@ import time
 import os
 from typing import Optional
 
+# Page configuration - MUST be first Streamlit command
+st.set_page_config(
+    page_title="PDF RAG Chatbot",
+    page_icon="📚",
+    layout="wide",
+)
+
 # API Configuration
-# Try to get from secrets, fall back to environment variable, then default
-try:
-    API_BASE_URL = st.secrets.get("API_BASE_URL", "http://localhost:8000")
-except FileNotFoundError:
-    API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+# Use environment variable or default (Docker Compose sets this)
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 
 def upload_document(file, title: str, parse_provider: str):
@@ -54,13 +58,7 @@ def chat(query: str, doc_id: Optional[str] = None, top_k: int = 5):
     return response.json()
 
 
-# Page configuration
-st.set_page_config(
-    page_title="PDF RAG Chatbot",
-    page_icon="📚",
-    layout="wide",
-)
-
+# Main UI
 st.title("📚 PDF RAG Chatbot System")
 st.markdown("교재 PDF를 업로드하고 AI 챗봇과 대화하세요")
 
