@@ -88,7 +88,7 @@ class UpstagePDFParser:
 
     def download_batch_json(self, download_url: str) -> Dict[str, Any]:
         """
-        Download parsed JSON from batch download URL.
+        Download parsed JSON from batch download URL with retry logic.
 
         Args:
             download_url: Signed URL from batch result
@@ -96,15 +96,33 @@ class UpstagePDFParser:
         Returns:
             Parsed JSON data
         """
-        try:
-            # Enable redirect following for presigned URLs
-            with httpx.Client(timeout=120.0, follow_redirects=True) as client:
-                response = client.get(download_url)
-                response.raise_for_status()
-                return response.json()
+        import json
+        from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
+        @retry(
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(multiplier=1.5, min=1, max=10),
+            retry=retry_if_exception_type((httpx.HTTPError, httpx.TimeoutException)),
+            reraise=True
+        )
+        def _download_with_retry():
+            # Use streaming to handle large files efficiently
+            with httpx.Client(timeout=120.0, follow_redirects=True) as client:
+                with client.stream("GET", download_url) as response:
+                    response.raise_for_status()
+
+                    # Read response content in chunks (256KB like the original code)
+                    content = b""
+                    for chunk in response.iter_bytes(chunk_size=256 * 1024):
+                        content += chunk
+
+                    # Parse JSON
+                    return json.loads(content.decode('utf-8'))
+
+        try:
+            return _download_with_retry()
         except Exception as e:
-            logger.error(f"Error downloading batch JSON: {e}")
+            logger.error(f"Error downloading batch JSON from {download_url}: {e}")
             raise
 
     def normalize_upstage_json(
