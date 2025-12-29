@@ -39,7 +39,7 @@ openai==1.10.0
 tiktoken==0.5.2
 
 # Text Processing
-kss==5.2.2
+kss==5.2.0
 
 # Utilities
 python-dotenv==1.0.0
