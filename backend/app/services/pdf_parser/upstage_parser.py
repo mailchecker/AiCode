@@ -43,7 +43,7 @@ class UpstagePDFParser:
         }
 
         try:
-            with httpx.Client(timeout=60.0) as client:
+            with httpx.Client(timeout=120.0, follow_redirects=True) as client:
                 response = client.post(url, headers=self.headers, files=files, data=data)
                 response.raise_for_status()
 
@@ -75,7 +75,7 @@ class UpstagePDFParser:
         url = f"{self.api_url}/requests/{request_id}"
 
         try:
-            with httpx.Client(timeout=30.0) as client:
+            with httpx.Client(timeout=60.0, follow_redirects=True) as client:
                 response = client.get(url, headers=self.headers)
                 response.raise_for_status()
                 result = response.json()
@@ -97,7 +97,8 @@ class UpstagePDFParser:
             Parsed JSON data
         """
         try:
-            with httpx.Client(timeout=60.0) as client:
+            # Enable redirect following for presigned URLs
+            with httpx.Client(timeout=120.0, follow_redirects=True) as client:
                 response = client.get(download_url)
                 response.raise_for_status()
                 return response.json()
