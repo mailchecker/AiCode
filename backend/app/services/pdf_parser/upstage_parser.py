@@ -318,14 +318,14 @@ class UpstagePDFParser:
         - table: <table> .. </table>
         - figure: <figure><img> .. </img></figure>
         - chart: <figure><img data-category="chart"> .. </img></figure>
-        - heading1: <h1>... </h1>
-        - header: <header> .. </header> (page header - metadata)
-        - footer: <footer> .. </footer> (page footer - metadata)
+        - heading1-6: <h1>... </h1> (section headings)
+        - header: <header> .. </header> (page header - EXCLUDED)
+        - footer: <footer> .. </footer> (page footer - EXCLUDED)
         - caption: <caption> .. </caption>
         - paragraph: <p data-category="paragraph">..</p>
         - equation: <p data-category="equation">..</p>
         - list: <p data-category="list">..</p>
-        - index: <p data-category="index">..</p>
+        - index: <p data-category="index">..</p> (Table of Contents - INCLUDED)
         - footnote: <p data-category="footnote"> </p>
 
         Args:
@@ -351,14 +351,14 @@ class UpstagePDFParser:
             # Content blocks
             "paragraph": "body",
             "list": "body",
+            "index": "body",       # Table of Contents (TOC) - important structure info
             "equation": "equation",  # Keep separate for special handling
             "footnote": "footnote",  # Keep separate for reference
             "caption": "caption",
 
-            # Metadata (page headers/footers - not section headers)
-            "header": "metadata",  # Page header
-            "footer": "metadata",  # Page footer
-            "index": "metadata",   # Index entries
+            # Metadata (page headers/footers only - excluded from chunking)
+            "header": "metadata",  # Page header (e.g., "Chapter 3", page numbers)
+            "footer": "metadata",  # Page footer (e.g., copyright, page numbers)
         }
         return type_mapping.get(upstage_type.lower(), "body")
 
