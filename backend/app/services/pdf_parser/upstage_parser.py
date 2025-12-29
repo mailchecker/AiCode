@@ -178,7 +178,12 @@ class UpstagePDFParser:
 
                     # Text is inside content object
                     content = element.get("content", {})
-                    text = content.get("text", "").strip()
+
+                    # For tables, prefer markdown to preserve structure
+                    if element_type.lower() == "table":
+                        text = content.get("markdown", content.get("text", "")).strip()
+                    else:
+                        text = content.get("text", "").strip()
 
                     block_type = self._map_element_type(element_type)
 
@@ -324,7 +329,13 @@ class UpstagePDFParser:
             "paragraph": "body",
             "text": "body",
             "list": "body",
-            "heading": "body",
+            "heading": "heading",
+            "heading1": "heading",
+            "heading2": "heading",
+            "heading3": "heading",
+            "heading4": "heading",
+            "heading5": "heading",
+            "heading6": "heading",
         }
         return type_mapping.get(upstage_type.lower(), "body")
 
