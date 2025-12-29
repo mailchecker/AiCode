@@ -49,7 +49,8 @@ class UpstagePDFParser:
 
                 # Upstage returns request_id in JSON response
                 result = response.json()
-                request_id = result.get("id")
+                # Try both 'request_id' and 'id' field names
+                request_id = result.get("request_id") or result.get("id")
 
                 if not request_id:
                     raise ValueError(f"No request_id in response: {result}")
