@@ -2,6 +2,7 @@
 import httpx
 import time
 import logging
+import base64
 from typing import Dict, Any, List, Optional
 from app.config import settings
 
@@ -104,7 +105,13 @@ class UpstagePDFParser:
             logger.error(f"Error downloading batch JSON: {e}")
             raise
 
-    def normalize_upstage_json(self, batches_data: List[Dict[str, Any]], doc_id: str, version_id: str) -> Dict[str, Any]:
+    def normalize_upstage_json(
+        self,
+        batches_data: List[Dict[str, Any]],
+        doc_id: str,
+        version_id: str,
+        extract_images: bool = True,
+    ) -> Dict[str, Any]:
         """
         Convert Upstage JSON format to our standard normalized schema.
 
@@ -112,13 +119,18 @@ class UpstagePDFParser:
             batches_data: List of batch JSON data from Upstage
             doc_id: Document ID
             version_id: Version ID
+            extract_images: If True, extract BASE64 images to MinIO (default: True)
 
         Returns:
             Normalized JSON in standard schema
         """
-        logger.info(f"Normalizing {len(batches_data)} Upstage batches")
+        logger.info(f"Normalizing {len(batches_data)} Upstage batches (extract_images={extract_images})")
+
+        # Import here to avoid circular dependency
+        from app.services.minio_service import minio_service
 
         pages = []
+        total_images = 0
 
         # Each batch contains multiple pages
         for batch_data in batches_data:
@@ -135,34 +147,54 @@ class UpstagePDFParser:
                 for idx, element in enumerate(elements):
                     element_type = element.get("category", "body")
                     text = element.get("text", "").strip()
-
-                    if not text:
-                        continue
-
-                    # Map Upstage categories to our types
                     block_type = self._map_element_type(element_type)
 
                     # Get bounding box
-                    bbox = element.get("coordinates", {}).get("points", None)
-                    if bbox and isinstance(bbox, list):
-                        # Upstage returns [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
-                        # Convert to [x1, y1, x2, y2] (top-left, bottom-right)
-                        if len(bbox) >= 2:
-                            x_coords = [p[0] for p in bbox if len(p) >= 2]
-                            y_coords = [p[1] for p in bbox if len(p) >= 2]
-                            if x_coords and y_coords:
-                                bbox = [min(x_coords), min(y_coords), max(x_coords), max(y_coords)]
-                            else:
-                                bbox = None
-                        else:
-                            bbox = None
+                    bbox = self._extract_bbox(element.get("coordinates", {}).get("points"))
 
-                    blocks.append({
+                    # Create base block
+                    block = {
                         "type": block_type,
                         "text": text,
                         "bbox": bbox,
                         "order": idx,
-                    })
+                    }
+
+                    # Handle images in figure blocks
+                    if block_type == "figure" and extract_images:
+                        base64_image = element.get("base64_encoding")
+                        if base64_image:
+                            try:
+                                # Decode BASE64 image
+                                image_data = base64.b64decode(base64_image)
+                                image_type = self._detect_image_type(image_data)
+
+                                # Upload to MinIO
+                                image_id = f"page_{page_no}_block_{idx}"
+                                image_uri = minio_service.upload_image(
+                                    doc_id=doc_id,
+                                    version_id=version_id,
+                                    image_data=image_data,
+                                    image_id=image_id,
+                                    content_type=image_type,
+                                )
+
+                                # Add image URI to block
+                                block["image_uri"] = image_uri
+                                block["image_type"] = image_type
+                                block["image_size"] = len(image_data)
+                                total_images += 1
+
+                                logger.debug(f"Extracted image: {image_uri} ({len(image_data)} bytes)")
+
+                            except Exception as e:
+                                logger.error(f"Error extracting image from page {page_no}, block {idx}: {e}")
+                                # Continue without image
+                                block["image_error"] = str(e)
+
+                    # Only add blocks with content or images
+                    if text or block.get("image_uri"):
+                        blocks.append(block)
 
                 pages.append({
                     "page_no": page_no,
@@ -178,8 +210,63 @@ class UpstagePDFParser:
             "pages": pages,
         }
 
-        logger.info(f"Normalized {len(pages)} pages from Upstage data")
+        logger.info(f"Normalized {len(pages)} pages with {total_images} images from Upstage data")
         return result
+
+    def _extract_bbox(self, points: Optional[List]) -> Optional[List[float]]:
+        """
+        Extract bounding box from Upstage coordinate points.
+
+        Args:
+            points: Upstage coordinate points [[x1,y1], [x2,y2], ...]
+
+        Returns:
+            Bounding box [x1, y1, x2, y2] or None
+        """
+        if not points or not isinstance(points, list):
+            return None
+
+        # Upstage returns [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+        # Convert to [x1, y1, x2, y2] (top-left, bottom-right)
+        if len(points) >= 2:
+            x_coords = [p[0] for p in points if len(p) >= 2]
+            y_coords = [p[1] for p in points if len(p) >= 2]
+            if x_coords and y_coords:
+                return [min(x_coords), min(y_coords), max(x_coords), max(y_coords)]
+
+        return None
+
+    def _detect_image_type(self, image_data: bytes) -> str:
+        """
+        Detect image MIME type from image bytes using magic numbers.
+
+        Args:
+            image_data: Image binary data
+
+        Returns:
+            MIME type (e.g., "image/png", "image/jpeg")
+        """
+        if len(image_data) < 12:
+            return "image/png"  # Default
+
+        # PNG: 89 50 4E 47
+        if image_data[:4] == b'\x89PNG':
+            return "image/png"
+
+        # JPEG: FF D8 FF
+        if image_data[:3] == b'\xff\xd8\xff':
+            return "image/jpeg"
+
+        # GIF: 47 49 46 38
+        if image_data[:4] in (b'GIF87a', b'GIF89a'):
+            return "image/gif"
+
+        # WebP: 52 49 46 46 ... 57 45 42 50
+        if image_data[:4] == b'RIFF' and image_data[8:12] == b'WEBP':
+            return "image/webp"
+
+        # Default to PNG
+        return "image/png"
 
     def _map_element_type(self, upstage_type: str) -> str:
         """

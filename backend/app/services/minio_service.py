@@ -188,6 +188,78 @@ class MinIOService:
             logger.error(f"Error downloading file from {uri}: {e}")
             raise
 
+    def upload_image(
+        self,
+        doc_id: str,
+        version_id: str,
+        image_data: bytes,
+        image_id: str,
+        content_type: str = "image/png",
+    ) -> str:
+        """
+        Upload image to MinIO derived bucket.
+
+        Args:
+            doc_id: Document ID
+            version_id: Version ID
+            image_data: Image bytes
+            image_id: Image identifier (e.g., "page_1_block_3")
+            content_type: Image MIME type (image/png, image/jpeg, etc.)
+
+        Returns:
+            MinIO URI (bucket/path)
+        """
+        # Determine file extension from content_type
+        ext_mapping = {
+            "image/png": "png",
+            "image/jpeg": "jpg",
+            "image/jpg": "jpg",
+            "image/gif": "gif",
+            "image/webp": "webp",
+        }
+        ext = ext_mapping.get(content_type, "png")
+
+        object_name = f"{doc_id}/{version_id}/images/{image_id}.{ext}"
+
+        try:
+            self.client.put_object(
+                settings.bucket_derived,
+                object_name,
+                io.BytesIO(image_data),
+                length=len(image_data),
+                content_type=content_type,
+            )
+            uri = f"{settings.bucket_derived}/{object_name}"
+            logger.info(f"Uploaded image to {uri}")
+            return uri
+        except S3Error as e:
+            logger.error(f"Error uploading image: {e}")
+            raise
+
+    def get_presigned_url(self, uri: str, expires_seconds: int = 3600) -> str:
+        """
+        Generate presigned URL for accessing MinIO object.
+
+        Args:
+            uri: MinIO URI (bucket/path)
+            expires_seconds: URL expiration time in seconds (default 1 hour)
+
+        Returns:
+            Presigned URL
+        """
+        bucket, object_name = uri.split("/", 1)
+        try:
+            from datetime import timedelta
+            url = self.client.presigned_get_object(
+                bucket,
+                object_name,
+                expires=timedelta(seconds=expires_seconds),
+            )
+            return url
+        except S3Error as e:
+            logger.error(f"Error generating presigned URL for {uri}: {e}")
+            raise
+
     def delete_object(self, uri: str):
         """
         Delete object from MinIO.
