@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect('/app/data/db.sqlite')
+conn = sqlite3.connect('/app/data/app.db')
 cursor = conn.cursor()
 
 # 현재 상태 확인
