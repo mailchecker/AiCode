@@ -29,6 +29,7 @@ class TextChunker:
         self.chunk_size = chunk_size or settings.chunk_size
         self.chunk_overlap = chunk_overlap or settings.chunk_overlap
         self.min_chunk_size = settings.min_chunk_size
+        self.max_embedding_tokens = settings.max_embedding_tokens
         self.chunk_by_sentence = settings.chunk_by_sentence
         self.merge_short_blocks = settings.merge_short_blocks
         self.skip_metadata_blocks = settings.skip_metadata_blocks
@@ -172,9 +173,10 @@ class TextChunker:
     def _chunk_blocks(self, blocks: List[Dict[str, Any]]) -> List[str]:
         """
         Chunk preprocessed blocks by accumulating them until chunk_size is reached.
+        Respects Upstage paragraph boundaries - only splits if exceeds max_embedding_tokens.
 
         Args:
-            blocks: Preprocessed blocks
+            blocks: Preprocessed blocks (each block is typically one Upstage paragraph)
 
         Returns:
             List of text chunks
@@ -184,19 +186,23 @@ class TextChunker:
         current_tokens = 0
 
         for block in blocks:
-            # Clean text: replace newlines with spaces (preserve paragraphs)
+            # Clean text: replace newlines with spaces
             text = block["text"].replace("\n", " ").strip()
             tokens = self.count_tokens(text)
 
-            # If single block exceeds chunk_size, split it
-            if tokens > self.chunk_size:
+            # If single paragraph exceeds embedding limit, must split (unavoidable)
+            if tokens > self.max_embedding_tokens:
+                logger.warning(
+                    f"Paragraph exceeds embedding limit ({tokens} > {self.max_embedding_tokens}). "
+                    f"Splitting into sentences."
+                )
                 # Flush current accumulated texts first
                 if current_texts:
                     chunks.append(" ".join(current_texts))
                     current_texts = []
                     current_tokens = 0
 
-                # Split the large block
+                # Split the oversized paragraph
                 if self.chunk_by_sentence:
                     block_chunks = self._chunk_by_sentence(text)
                 else:
@@ -204,17 +210,18 @@ class TextChunker:
                 chunks.extend(block_chunks)
                 continue
 
-            # Check if adding this block exceeds chunk_size
+            # Paragraph is within embedding limit - try to accumulate
+            # Check if adding this paragraph exceeds target chunk_size
             if current_tokens + tokens > self.chunk_size:
                 # Flush current chunk
                 if current_texts:
                     chunks.append(" ".join(current_texts))
 
-                # Start new chunk with this block
+                # Start new chunk with this paragraph
                 current_texts = [text]
                 current_tokens = tokens
             else:
-                # Add block to current chunk
+                # Add paragraph to current chunk
                 current_texts.append(text)
                 current_tokens += tokens
 
@@ -227,6 +234,7 @@ class TextChunker:
     def _chunk_by_sentence(self, text: str) -> List[str]:
         """
         Chunk text by sentence with overlap.
+        Uses max_embedding_tokens as the hard limit.
 
         Args:
             text: Input text (newlines already replaced with spaces)
@@ -247,11 +255,18 @@ class TextChunker:
         current_chunk_sentences = []
         current_tokens = 0
 
+        # Use max_embedding_tokens as hard limit to avoid truncation
+        max_tokens = self.max_embedding_tokens
+
         for sentence in sentences:
             sentence_tokens = self.count_tokens(sentence)
 
-            # If single sentence exceeds chunk_size, split by token
-            if sentence_tokens > self.chunk_size:
+            # If single sentence exceeds embedding limit, split by token
+            if sentence_tokens > max_tokens:
+                logger.warning(
+                    f"Single sentence exceeds embedding limit ({sentence_tokens} > {max_tokens}). "
+                    f"Splitting by token."
+                )
                 # Flush current chunk
                 if current_chunk_sentences:
                     chunks.append(" ".join(current_chunk_sentences))
@@ -263,8 +278,8 @@ class TextChunker:
                 chunks.extend(token_chunks)
                 continue
 
-            # Check if adding this sentence exceeds chunk_size
-            if current_tokens + sentence_tokens > self.chunk_size:
+            # Check if adding this sentence exceeds limit
+            if current_tokens + sentence_tokens > max_tokens:
                 # Flush current chunk
                 if current_chunk_sentences:
                     chunks.append(" ".join(current_chunk_sentences))
@@ -368,6 +383,7 @@ class TextChunker:
     def _chunk_by_token(self, text: str) -> List[str]:
         """
         Chunk text by token (fallback for very long sentences).
+        Uses max_embedding_tokens as the hard limit.
 
         Args:
             text: Input text
@@ -381,22 +397,25 @@ class TextChunker:
         # Tokenize
         tokens = self.encoding.encode(text)
 
-        if len(tokens) <= self.chunk_size:
+        # Use max_embedding_tokens as hard limit
+        max_tokens = self.max_embedding_tokens
+
+        if len(tokens) <= max_tokens:
             return [text]
 
         chunks = []
         start = 0
 
         while start < len(tokens):
-            end = start + self.chunk_size
+            end = start + max_tokens
             chunk_tokens = tokens[start:end]
 
             # Decode back to text
             chunk_text = self.encoding.decode(chunk_tokens)
             chunks.append(chunk_text)
 
-            # Move start by (chunk_size - overlap)
-            start += self.chunk_size - self.chunk_overlap
+            # Move start by (max_tokens - overlap)
+            start += max_tokens - self.chunk_overlap
 
         return chunks
 

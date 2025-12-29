@@ -42,10 +42,11 @@ class Settings(BaseSettings):
     embedding_dimension: int = 768
 
     # Chunking Configuration
-    chunk_size: int = 700
-    chunk_overlap: int = 140
+    chunk_size: int = 450  # Target chunk size (multiple paragraphs combined)
+    chunk_overlap: int = 90  # 20% of chunk_size
     min_chunk_size: int = 50  # Minimum tokens for a chunk
-    chunk_by_sentence: bool = True  # Use sentence-based chunking
+    max_embedding_tokens: int = 512  # KURE-v1 embedding model limit
+    chunk_by_sentence: bool = True  # Use sentence-based chunking (for oversized paragraphs only)
     merge_short_blocks: bool = True  # Merge blocks < min_chunk_size
     skip_metadata_blocks: bool = True  # Skip headers/footers
 
