@@ -163,19 +163,26 @@ class UpstagePDFParser:
                 batch_pages = [batch_data]
 
             for page_data in batch_pages:
-                page_no = page_data.get("page", 0)
-
                 # Extract elements from page
                 elements = page_data.get("elements", [])
-                blocks = []
 
+                # Group elements by page number (each element has its own page field)
+                pages_dict = {}
                 for idx, element in enumerate(elements):
+                    page_no = element.get("page", 1)
+                    if page_no not in pages_dict:
+                        pages_dict[page_no] = []
+
                     element_type = element.get("category", "body")
-                    text = element.get("text", "").strip()
+
+                    # Text is inside content object
+                    content = element.get("content", {})
+                    text = content.get("text", "").strip()
+
                     block_type = self._map_element_type(element_type)
 
-                    # Get bounding box
-                    bbox = self._extract_bbox(element.get("coordinates", {}).get("points"))
+                    # Get bounding box - coordinates is already an array
+                    bbox = self._extract_bbox(element.get("coordinates", []))
 
                     # Create base block
                     block = {
@@ -219,12 +226,14 @@ class UpstagePDFParser:
 
                     # Only add blocks with content or images
                     if text or block.get("image_uri"):
-                        blocks.append(block)
+                        pages_dict[page_no].append(block)
 
-                pages.append({
-                    "page_no": page_no,
-                    "blocks": blocks,
-                })
+                # Convert pages_dict to pages list
+                for page_no in sorted(pages_dict.keys()):
+                    pages.append({
+                        "page_no": page_no,
+                        "blocks": pages_dict[page_no],
+                    })
 
         # Sort pages by page number
         pages.sort(key=lambda p: p["page_no"])
@@ -243,7 +252,7 @@ class UpstagePDFParser:
         Extract bounding box from Upstage coordinate points.
 
         Args:
-            points: Upstage coordinate points [[x1,y1], [x2,y2], ...]
+            points: Upstage coordinate points [{"x": x1, "y": y1}, {"x": x2, "y": y2}, ...]
 
         Returns:
             Bounding box [x1, y1, x2, y2] or None
@@ -251,11 +260,11 @@ class UpstagePDFParser:
         if not points or not isinstance(points, list):
             return None
 
-        # Upstage returns [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+        # Upstage returns [{"x": x1, "y": y1}, {"x": x2, "y": y2}, ...]
         # Convert to [x1, y1, x2, y2] (top-left, bottom-right)
         if len(points) >= 2:
-            x_coords = [p[0] for p in points if len(p) >= 2]
-            y_coords = [p[1] for p in points if len(p) >= 2]
+            x_coords = [p.get("x") for p in points if isinstance(p, dict) and "x" in p]
+            y_coords = [p.get("y") for p in points if isinstance(p, dict) and "y" in p]
             if x_coords and y_coords:
                 return [min(x_coords), min(y_coords), max(x_coords), max(y_coords)]
 
