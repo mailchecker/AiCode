@@ -168,7 +168,7 @@ class UpstagePDFParser:
 
                 # Group elements by page number (each element has its own page field)
                 pages_dict = {}
-                for idx, element in enumerate(elements):
+                for element in elements:
                     page_no = element.get("page", 1)
                     if page_no not in pages_dict:
                         pages_dict[page_no] = []
@@ -184,12 +184,11 @@ class UpstagePDFParser:
                     # Get bounding box - coordinates is already an array
                     bbox = self._extract_bbox(element.get("coordinates", []))
 
-                    # Create base block
+                    # Create base block (order will be set after grouping)
                     block = {
                         "type": block_type,
                         "text": text,
                         "bbox": bbox,
-                        "order": idx,
                     }
 
                     # Handle images in figure blocks
@@ -228,11 +227,16 @@ class UpstagePDFParser:
                     if text or block.get("image_uri"):
                         pages_dict[page_no].append(block)
 
-                # Convert pages_dict to pages list
+                # Convert pages_dict to pages list and assign order within each page
                 for page_no in sorted(pages_dict.keys()):
+                    page_blocks = pages_dict[page_no]
+                    # Set order for each block within the page
+                    for idx, block in enumerate(page_blocks):
+                        block["order"] = idx
+
                     pages.append({
                         "page_no": page_no,
-                        "blocks": pages_dict[page_no],
+                        "blocks": page_blocks,
                     })
 
         # Sort pages by page number
