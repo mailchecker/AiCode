@@ -152,10 +152,15 @@ class UpstagePDFParser:
         pages = []
         total_images = 0
 
-        # Each batch contains multiple pages
+        # Each batch file is a single page
         for batch_data in batches_data:
-            # Upstage format: { "content": { "html": ..., "markdown": ..., "text": ... }, "pages": [...] }
-            batch_pages = batch_data.get("pages", [])
+            # Upstage format: Each batch file contains data for one page
+            # Check if batch has "pages" array (multi-page batch) or is a single page
+            if "pages" in batch_data:
+                batch_pages = batch_data["pages"]
+            else:
+                # Single page batch - wrap it in a list
+                batch_pages = [batch_data]
 
             for page_data in batch_pages:
                 page_no = page_data.get("page", 0)
