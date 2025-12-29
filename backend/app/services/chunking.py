@@ -171,7 +171,7 @@ class TextChunker:
 
     def _chunk_blocks(self, blocks: List[Dict[str, Any]]) -> List[str]:
         """
-        Chunk preprocessed blocks.
+        Chunk preprocessed blocks by accumulating them until chunk_size is reached.
 
         Args:
             blocks: Preprocessed blocks
@@ -179,32 +179,57 @@ class TextChunker:
         Returns:
             List of text chunks
         """
-        all_chunks = []
+        chunks = []
+        current_texts = []
+        current_tokens = 0
 
         for block in blocks:
-            text = block["text"]
-            tokens = block["tokens"]
+            # Clean text: replace newlines with spaces (preserve paragraphs)
+            text = block["text"].replace("\n", " ").strip()
+            tokens = self.count_tokens(text)
 
-            # Small blocks: keep as-is
-            if tokens <= self.chunk_size:
-                all_chunks.append(text)
-            else:
-                # Large blocks: split by sentence or token
+            # If single block exceeds chunk_size, split it
+            if tokens > self.chunk_size:
+                # Flush current accumulated texts first
+                if current_texts:
+                    chunks.append(" ".join(current_texts))
+                    current_texts = []
+                    current_tokens = 0
+
+                # Split the large block
                 if self.chunk_by_sentence:
                     block_chunks = self._chunk_by_sentence(text)
                 else:
                     block_chunks = self._chunk_by_token(text)
+                chunks.extend(block_chunks)
+                continue
 
-                all_chunks.extend(block_chunks)
+            # Check if adding this block exceeds chunk_size
+            if current_tokens + tokens > self.chunk_size:
+                # Flush current chunk
+                if current_texts:
+                    chunks.append(" ".join(current_texts))
 
-        return all_chunks
+                # Start new chunk with this block
+                current_texts = [text]
+                current_tokens = tokens
+            else:
+                # Add block to current chunk
+                current_texts.append(text)
+                current_tokens += tokens
+
+        # Flush remaining texts
+        if current_texts:
+            chunks.append(" ".join(current_texts))
+
+        return chunks
 
     def _chunk_by_sentence(self, text: str) -> List[str]:
         """
         Chunk text by sentence with overlap.
 
         Args:
-            text: Input text
+            text: Input text (newlines already replaced with spaces)
 
         Returns:
             List of sentence-based chunks
