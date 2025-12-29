@@ -314,6 +314,20 @@ class UpstagePDFParser:
         """
         Map Upstage element category to our block types.
 
+        Upstage categories (from HTML output):
+        - table: <table> .. </table>
+        - figure: <figure><img> .. </img></figure>
+        - chart: <figure><img data-category="chart"> .. </img></figure>
+        - heading1: <h1>... </h1>
+        - header: <header> .. </header> (page header - metadata)
+        - footer: <footer> .. </footer> (page footer - metadata)
+        - caption: <caption> .. </caption>
+        - paragraph: <p data-category="paragraph">..</p>
+        - equation: <p data-category="equation">..</p>
+        - list: <p data-category="list">..</p>
+        - index: <p data-category="index">..</p>
+        - footnote: <p data-category="footnote"> </p>
+
         Args:
             upstage_type: Upstage element category
 
@@ -321,21 +335,30 @@ class UpstagePDFParser:
             Our block type
         """
         type_mapping = {
-            "header": "header",
-            "footer": "footer",
+            # Tables and figures
             "table": "table",
             "figure": "figure",
-            "caption": "caption",
-            "paragraph": "body",
-            "text": "body",
-            "list": "body",
-            "heading": "heading",
+            "chart": "figure",  # Chart is a type of figure
+
+            # Headings
             "heading1": "heading",
             "heading2": "heading",
             "heading3": "heading",
             "heading4": "heading",
             "heading5": "heading",
             "heading6": "heading",
+
+            # Content blocks
+            "paragraph": "body",
+            "list": "body",
+            "equation": "equation",  # Keep separate for special handling
+            "footnote": "footnote",  # Keep separate for reference
+            "caption": "caption",
+
+            # Metadata (page headers/footers - not section headers)
+            "header": "metadata",  # Page header
+            "footer": "metadata",  # Page footer
+            "index": "metadata",   # Index entries
         }
         return type_mapping.get(upstage_type.lower(), "body")
 

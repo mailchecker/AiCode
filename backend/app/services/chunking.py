@@ -116,8 +116,8 @@ class TextChunker:
             if not text and not block.get("image_uri"):
                 continue
 
-            # Skip metadata blocks
-            if self.skip_metadata_blocks and block_type in ["header", "footer"]:
+            # Skip metadata blocks (page headers/footers, index)
+            if self.skip_metadata_blocks and block_type == "metadata":
                 continue
 
             tokens = self.count_tokens(text)
