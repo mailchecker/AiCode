@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     # Chunking Configuration
     chunk_size: int = 700
     chunk_overlap: int = 140
+    min_chunk_size: int = 50  # Minimum tokens for a chunk
+    chunk_by_sentence: bool = True  # Use sentence-based chunking
+    merge_short_blocks: bool = True  # Merge blocks < min_chunk_size
+    skip_metadata_blocks: bool = True  # Skip headers/footers
 
     # RAG Configuration
     top_k_retrieval: int = 5

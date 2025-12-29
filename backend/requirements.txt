@@ -38,6 +38,9 @@ openai==1.10.0
 # LLM
 tiktoken==0.5.2
 
+# Text Processing
+kss==5.2.2
+
 # Utilities
 python-dotenv==1.0.0
 pydantic==2.5.3
