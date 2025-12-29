@@ -174,6 +174,7 @@ class UpstagePDFParser:
                         pages_dict[page_no] = []
 
                     element_type = element.get("category", "body")
+                    element_id = element.get("id", 0)
 
                     # Text is inside content object
                     content = element.get("content", {})
@@ -184,11 +185,12 @@ class UpstagePDFParser:
                     # Get bounding box - coordinates is already an array
                     bbox = self._extract_bbox(element.get("coordinates", []))
 
-                    # Create base block (order will be set after grouping)
+                    # Create base block - use id as order to preserve document order
                     block = {
                         "type": block_type,
                         "text": text,
                         "bbox": bbox,
+                        "order": element_id,  # Use Upstage's id to preserve global order
                     }
 
                     # Handle images in figure blocks
@@ -201,7 +203,7 @@ class UpstagePDFParser:
                                 image_type = self._detect_image_type(image_data)
 
                                 # Upload to MinIO
-                                image_id = f"page_{page_no}_block_{idx}"
+                                image_id = f"page_{page_no}_element_{element_id}"
                                 image_uri = minio_service.upload_image(
                                     doc_id=doc_id,
                                     version_id=version_id,
@@ -227,13 +229,10 @@ class UpstagePDFParser:
                     if text or block.get("image_uri"):
                         pages_dict[page_no].append(block)
 
-                # Convert pages_dict to pages list and assign order within each page
+                # Convert pages_dict to pages list
                 for page_no in sorted(pages_dict.keys()):
                     page_blocks = pages_dict[page_no]
-                    # Set order for each block within the page
-                    for idx, block in enumerate(page_blocks):
-                        block["order"] = idx
-
+                    # Blocks already have order from element id - preserve it
                     pages.append({
                         "page_no": page_no,
                         "blocks": page_blocks,
