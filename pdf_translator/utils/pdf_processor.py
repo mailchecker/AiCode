@@ -169,6 +169,9 @@ class PDFTranslator:
 
             print(f"Found {len(text_blocks)} text blocks on page {page_idx + 1}")
 
+            # redaction annotations 리스트
+            redaction_annots = []
+
             # 각 텍스트 블록 처리
             for block_idx, block in enumerate(text_blocks):
                 try:
@@ -212,7 +215,15 @@ class PDFTranslator:
                         font_size = 11
                         font_color = 0
 
-                    # 원본 텍스트 영역을 redaction으로 제거 (투명)
+                    # 색상이 너무 밝으면 검은색으로 변경
+                    rgb_color = self._int_to_rgb(font_color)
+                    brightness = (rgb_color[0] + rgb_color[1] + rgb_color[2]) / 3
+                    if brightness > 0.8:  # 밝은 색상 (흰색 등)
+                        rgb_color = (0, 0, 0)  # 검은색으로 변경
+                        if block_idx == 0:
+                            print(f"[DEBUG] Bright color detected, changed to black")
+
+                    # 원본 텍스트 영역을 redaction으로 표시 (나중에 일괄 적용)
                     page.add_redact_annot(bbox)
 
                     # 번역된 텍스트 삽입 (한글 폰트 사용)
@@ -221,14 +232,14 @@ class PDFTranslator:
                         if korean_fontname:
                             if block_idx == 0:
                                 print(f"[DEBUG] Inserting text with fontname: {korean_fontname}")
-                                print(f"[DEBUG] Font size: {font_size}, Color: {self._int_to_rgb(font_color)}")
+                                print(f"[DEBUG] Font size: {font_size}, Color: {rgb_color}")
 
                             rc = page.insert_textbox(
                                 bbox,
                                 translated_text,
                                 fontname=korean_fontname,
                                 fontsize=font_size,
-                                color=self._int_to_rgb(font_color),
+                                color=rgb_color,
                                 align=fitz.TEXT_ALIGN_LEFT
                             )
 
@@ -240,7 +251,7 @@ class PDFTranslator:
                                 translated_text,
                                 fontname="helv",
                                 fontsize=font_size,
-                                color=self._int_to_rgb(font_color),
+                                color=rgb_color,
                                 align=fitz.TEXT_ALIGN_LEFT
                             )
                     except Exception as font_error:
@@ -252,7 +263,7 @@ class PDFTranslator:
                                     translated_text,
                                     fontname=korean_fontname,
                                     fontsize=11,
-                                    color=(0, 0, 0),
+                                    color=rgb_color,
                                     align=fitz.TEXT_ALIGN_LEFT
                                 )
                             else:
@@ -261,7 +272,7 @@ class PDFTranslator:
                                     translated_text,
                                     fontname="helv",
                                     fontsize=11,
-                                    color=(0, 0, 0),
+                                    color=rgb_color,
                                     align=fitz.TEXT_ALIGN_LEFT
                                 )
                         except:
@@ -277,7 +288,7 @@ class PDFTranslator:
                                         translated_text,
                                         fontname=korean_fontname,
                                         fontsize=smaller_size,
-                                        color=self._int_to_rgb(font_color),
+                                        color=rgb_color,
                                         align=fitz.TEXT_ALIGN_LEFT
                                     )
                                 else:
@@ -286,7 +297,7 @@ class PDFTranslator:
                                         translated_text,
                                         fontname="helv",
                                         fontsize=smaller_size,
-                                        color=self._int_to_rgb(font_color),
+                                        color=rgb_color,
                                         align=fitz.TEXT_ALIGN_LEFT
                                     )
                             except:
@@ -297,7 +308,7 @@ class PDFTranslator:
                                             translated_text,
                                             fontname=korean_fontname,
                                             fontsize=smaller_size,
-                                            color=(0, 0, 0),
+                                            color=rgb_color,
                                             align=fitz.TEXT_ALIGN_LEFT
                                         )
                                     else:
@@ -306,7 +317,7 @@ class PDFTranslator:
                                             translated_text,
                                             fontname="helv",
                                             fontsize=smaller_size,
-                                            color=(0, 0, 0),
+                                            color=rgb_color,
                                             align=fitz.TEXT_ALIGN_LEFT
                                         )
                                 except:
@@ -314,18 +325,21 @@ class PDFTranslator:
                             if rc >= 0:
                                 break
 
-                    # 텍스트 삽입 성공 시에만 redaction 적용
+                    # 텍스트 삽입 성공 여부 기록
                     if rc >= 0:
-                        page.apply_redactions()
+                        redaction_annots.append(True)
                     else:
-                        # 실패 시 redaction annotation 제거 (원본 유지)
+                        redaction_annots.append(False)
                         print(f"[WARNING] Failed to insert text for block {block_idx}, keeping original")
-                        # redaction을 취소하려면 페이지를 다시 로드해야 하지만,
-                        # 여기서는 간단히 redaction을 적용하지 않음으로써 원본 유지
 
                 except Exception as e:
                     print(f"Error processing block {block_idx} on page {page_idx + 1}: {e}")
+                    redaction_annots.append(False)
                     continue
+
+            # 모든 텍스트 처리 후 redaction 일괄 적용
+            print(f"[DEBUG] Applying redactions for page {page_idx + 1}")
+            page.apply_redactions()
 
         # 저장
         doc.save(output_path)
