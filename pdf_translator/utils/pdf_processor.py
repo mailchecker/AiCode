@@ -137,6 +137,13 @@ class PDFTranslator:
             print(f"\nProcessing page {page_idx + 1}/{total_pages}...")
             page = doc[page_idx]
 
+            # 디버그: 폰트 경로 확인
+            if self.korean_font_path:
+                print(f"[DEBUG] Korean font path: {self.korean_font_path}")
+                print(f"[DEBUG] Font file exists: {os.path.exists(self.korean_font_path)}")
+            else:
+                print(f"[WARNING] No Korean font path detected!")
+
             # 텍스트 블록 추출 (위치 정보 포함)
             blocks = page.get_text("dict")["blocks"]
 
@@ -167,6 +174,14 @@ class PDFTranslator:
                         target_lang
                     )
 
+                    # 디버그: 번역된 텍스트 샘플 출력
+                    if block_idx == 0:  # 첫 번째 블록만
+                        print(f"[DEBUG] Original text: {block_text[:50]}...")
+                        print(f"[DEBUG] Translated text: {translated_text[:50]}...")
+                        # 한글이 포함되어 있는지 확인
+                        has_korean = any('\uac00' <= c <= '\ud7a3' for c in translated_text)
+                        print(f"[DEBUG] Contains Korean characters: {has_korean}")
+
                     # 원본 텍스트 영역 정보
                     bbox = block["bbox"]  # (x0, y0, x1, y1)
 
@@ -189,6 +204,10 @@ class PDFTranslator:
                     try:
                         if self.korean_font_path:
                             # 한글 폰트 파일 직접 사용
+                            if block_idx == 0:
+                                print(f"[DEBUG] Inserting text with fontfile: {self.korean_font_path}")
+                                print(f"[DEBUG] Font size: {font_size}, Color: {self._int_to_rgb(font_color)}")
+
                             rc = page.insert_textbox(
                                 bbox,
                                 translated_text,
@@ -197,6 +216,9 @@ class PDFTranslator:
                                 color=self._int_to_rgb(font_color),
                                 align=fitz.TEXT_ALIGN_LEFT
                             )
+
+                            if block_idx == 0:
+                                print(f"[DEBUG] insert_textbox result: {rc}")
                         else:
                             # 폰트가 없으면 기본 폰트 사용 (영어만 가능)
                             rc = page.insert_textbox(

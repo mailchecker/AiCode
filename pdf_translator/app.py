@@ -5,8 +5,12 @@ import streamlit as st
 import os
 import tempfile
 from pathlib import Path
+from dotenv import load_dotenv
 from utils.translator import TextTranslator
 from utils.pdf_processor import PDFTranslator
+
+# .env 파일 로드
+load_dotenv(encoding='utf-8')
 
 
 # 페이지 설정
@@ -66,13 +70,14 @@ def main():
         source_lang_display = st.selectbox(
             "Source Language (원본 언어)",
             options=list(LANGUAGES.keys()),
+            index=1,  # 기본값: English (영어)
             format_func=lambda x: f"{LANGUAGES[x]} ({x})"
         )
 
         target_lang_display = st.selectbox(
             "Target Language (번역 언어)",
             options=list(LANGUAGES.keys()),
-            index=1,  # 기본값: 영어
+            index=0,  # 기본값: Korean (한국어)
             format_func=lambda x: f"{LANGUAGES[x]} ({x})"
         )
 
