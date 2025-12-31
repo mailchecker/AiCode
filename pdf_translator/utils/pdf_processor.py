@@ -223,9 +223,6 @@ class PDFTranslator:
                         if block_idx == 0:
                             print(f"[DEBUG] Bright color detected, changed to black")
 
-                    # 원본 텍스트 영역을 redaction으로 표시 (나중에 일괄 적용)
-                    page.add_redact_annot(bbox)
-
                     # 번역된 텍스트 삽입 (한글 폰트 사용)
                     rc = -1
                     try:
@@ -280,7 +277,7 @@ class PDFTranslator:
 
                     # 텍스트가 영역을 초과하면 폰트 크기 줄이기
                     if rc < 0:
-                        for smaller_size in range(int(font_size) - 1, 6, -1):
+                        for smaller_size in range(int(font_size) - 1, 3, -1):
                             try:
                                 if korean_fontname:
                                     rc = page.insert_textbox(
@@ -325,8 +322,9 @@ class PDFTranslator:
                             if rc >= 0:
                                 break
 
-                    # 텍스트 삽입 성공 여부 기록
+                    # 텍스트 삽입 성공 시에만 원본 텍스트 영역을 redaction으로 표시
                     if rc >= 0:
+                        page.add_redact_annot(bbox)
                         redaction_annots.append(True)
                     else:
                         redaction_annots.append(False)
