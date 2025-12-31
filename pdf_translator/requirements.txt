@@ -1,0 +1,16 @@
+# PDF Translation System Dependencies
+
+# PDF Processing
+PyMuPDF>=1.23.0
+
+# OpenAI API
+openai>=1.0.0
+
+# Streamlit Frontend
+streamlit>=1.28.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Utilities
+pathlib>=1.0.1
