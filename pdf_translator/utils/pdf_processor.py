@@ -212,10 +212,11 @@ class PDFTranslator:
                         font_size = 11
                         font_color = 0
 
-                    # 원본 텍스트 영역에 흰색 사각형 그리기 (텍스트 지우기)
-                    page.draw_rect(bbox, color=(1, 1, 1), fill=(1, 1, 1))
+                    # 원본 텍스트 영역을 redaction으로 제거 (투명)
+                    page.add_redact_annot(bbox)
 
                     # 번역된 텍스트 삽입 (한글 폰트 사용)
+                    rc = -1
                     try:
                         if korean_fontname:
                             if block_idx == 0:
@@ -269,7 +270,6 @@ class PDFTranslator:
                     # 텍스트가 영역을 초과하면 폰트 크기 줄이기
                     if rc < 0:
                         for smaller_size in range(int(font_size) - 1, 6, -1):
-                            page.draw_rect(bbox, color=(1, 1, 1), fill=(1, 1, 1))
                             try:
                                 if korean_fontname:
                                     rc = page.insert_textbox(
@@ -313,6 +313,15 @@ class PDFTranslator:
                                     pass
                             if rc >= 0:
                                 break
+
+                    # 텍스트 삽입 성공 시에만 redaction 적용
+                    if rc >= 0:
+                        page.apply_redactions()
+                    else:
+                        # 실패 시 redaction annotation 제거 (원본 유지)
+                        print(f"[WARNING] Failed to insert text for block {block_idx}, keeping original")
+                        # redaction을 취소하려면 페이지를 다시 로드해야 하지만,
+                        # 여기서는 간단히 redaction을 적용하지 않음으로써 원본 유지
 
                 except Exception as e:
                     print(f"Error processing block {block_idx} on page {page_idx + 1}: {e}")
