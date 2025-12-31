@@ -3,6 +3,8 @@ PDF Processing with PyMuPDF (fitz)
 Extracts text while preserving layout, translates, and replaces text
 """
 import fitz  # PyMuPDF
+import os
+import platform
 from typing import List, Tuple, Optional
 from .translator import TextTranslator
 
@@ -18,6 +20,56 @@ class PDFTranslator:
             translator: TextTranslator 인스턴스
         """
         self.translator = translator
+        self.korean_font_path = self._get_korean_font()
+        self.korean_font = None
+
+        # 한글 폰트를 PyMuPDF에 등록
+        if self.korean_font_path:
+            try:
+                self.korean_font = fitz.Font(fontfile=self.korean_font_path)
+                print(f"Korean font loaded successfully: {self.korean_font.name}")
+            except Exception as e:
+                print(f"Failed to load Korean font: {e}")
+                self.korean_font = None
+
+    def _get_korean_font(self) -> Optional[str]:
+        """
+        시스템에서 한글 폰트 찾기
+
+        Returns:
+            한글 폰트 파일 경로 또는 None
+        """
+        system = platform.system()
+
+        # Windows 폰트 경로
+        if system == "Windows":
+            font_paths = [
+                "C:\\Windows\\Fonts\\malgun.ttf",      # 맑은 고딕
+                "C:\\Windows\\Fonts\\gulim.ttc",       # 굴림
+                "C:\\Windows\\Fonts\\batang.ttc",      # 바탕
+                "C:\\Windows\\Fonts\\NanumGothic.ttf", # 나눔고딕
+            ]
+        # macOS 폰트 경로
+        elif system == "Darwin":
+            font_paths = [
+                "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+                "/Library/Fonts/AppleGothic.ttf",
+            ]
+        # Linux 폰트 경로
+        else:
+            font_paths = [
+                "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
+            ]
+
+        # 존재하는 첫 번째 폰트 반환
+        for font_path in font_paths:
+            if os.path.exists(font_path):
+                print(f"Using Korean font: {font_path}")
+                return font_path
+
+        print("Warning: No Korean font found, text may not display correctly")
+        return None
 
     def parse_page_range(self, page_range: str, total_pages: int) -> List[int]:
         """
@@ -131,42 +183,112 @@ class PDFTranslator:
                     # 첫 번째 span의 폰트 정보 가져오기
                     first_span = block["lines"][0]["spans"][0] if block.get("lines") and block["lines"][0].get("spans") else None
 
+                    # 폰트 크기와 색상 정보
                     if first_span:
-                        font_name = first_span.get("font", "helv")
                         font_size = first_span.get("size", 11)
                         font_color = first_span.get("color", 0)  # RGB as integer
                     else:
-                        font_name = "helv"
                         font_size = 11
                         font_color = 0
 
                     # 원본 텍스트 영역에 흰색 사각형 그리기 (텍스트 지우기)
                     page.draw_rect(bbox, color=(1, 1, 1), fill=(1, 1, 1))
 
-                    # 번역된 텍스트 삽입
+                    # 번역된 텍스트 삽입 (한글 폰트 사용)
                     # 텍스트가 영역에 맞도록 자동 조정
-                    rc = page.insert_textbox(
-                        bbox,
-                        translated_text,
-                        fontname=font_name,
-                        fontsize=font_size,
-                        color=self._int_to_rgb(font_color),
-                        align=fitz.TEXT_ALIGN_LEFT
-                    )
+                    try:
+                        if self.korean_font:
+                            # 등록된 한글 폰트 사용
+                            rc = page.insert_textbox(
+                                bbox,
+                                translated_text,
+                                font=self.korean_font,
+                                fontsize=font_size,
+                                color=self._int_to_rgb(font_color),
+                                align=fitz.TEXT_ALIGN_LEFT
+                            )
+                        else:
+                            # 폰트가 없으면 기본 폰트 사용 (영어만 가능)
+                            rc = page.insert_textbox(
+                                bbox,
+                                translated_text,
+                                fontname="helv",
+                                fontsize=font_size,
+                                color=self._int_to_rgb(font_color),
+                                align=fitz.TEXT_ALIGN_LEFT
+                            )
+                    except Exception as font_error:
+                        print(f"Font error, using fallback: {font_error}")
+                        # Fallback: 기본 설정으로 재시도
+                        try:
+                            if self.korean_font:
+                                rc = page.insert_textbox(
+                                    bbox,
+                                    translated_text,
+                                    font=self.korean_font,
+                                    fontsize=11,
+                                    color=(0, 0, 0),
+                                    align=fitz.TEXT_ALIGN_LEFT
+                                )
+                            else:
+                                rc = page.insert_textbox(
+                                    bbox,
+                                    translated_text,
+                                    fontname="helv",
+                                    fontsize=11,
+                                    color=(0, 0, 0),
+                                    align=fitz.TEXT_ALIGN_LEFT
+                                )
+                        except:
+                            rc = -1  # 실패
 
                     # 텍스트가 영역을 초과하면 폰트 크기 줄이기
                     if rc < 0:
                         # 폰트 크기를 줄여가며 재시도
                         for smaller_size in range(int(font_size) - 1, 6, -1):
                             page.draw_rect(bbox, color=(1, 1, 1), fill=(1, 1, 1))
-                            rc = page.insert_textbox(
-                                bbox,
-                                translated_text,
-                                fontname=font_name,
-                                fontsize=smaller_size,
-                                color=self._int_to_rgb(font_color),
-                                align=fitz.TEXT_ALIGN_LEFT
-                            )
+                            try:
+                                if self.korean_font:
+                                    rc = page.insert_textbox(
+                                        bbox,
+                                        translated_text,
+                                        font=self.korean_font,
+                                        fontsize=smaller_size,
+                                        color=self._int_to_rgb(font_color),
+                                        align=fitz.TEXT_ALIGN_LEFT
+                                    )
+                                else:
+                                    rc = page.insert_textbox(
+                                        bbox,
+                                        translated_text,
+                                        fontname="helv",
+                                        fontsize=smaller_size,
+                                        color=self._int_to_rgb(font_color),
+                                        align=fitz.TEXT_ALIGN_LEFT
+                                    )
+                            except:
+                                # 최후의 수단: 최소한의 설정으로 시도
+                                try:
+                                    if self.korean_font:
+                                        rc = page.insert_textbox(
+                                            bbox,
+                                            translated_text,
+                                            font=self.korean_font,
+                                            fontsize=smaller_size,
+                                            color=(0, 0, 0),
+                                            align=fitz.TEXT_ALIGN_LEFT
+                                        )
+                                    else:
+                                        rc = page.insert_textbox(
+                                            bbox,
+                                            translated_text,
+                                            fontname="helv",
+                                            fontsize=smaller_size,
+                                            color=(0, 0, 0),
+                                            align=fitz.TEXT_ALIGN_LEFT
+                                        )
+                                except:
+                                    pass
                             if rc >= 0:
                                 break
 
