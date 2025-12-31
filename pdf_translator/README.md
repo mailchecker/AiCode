@@ -27,28 +27,42 @@ PDF 문서의 텍스트를 번역하면서 **원본 레이아웃을 유지**하�
 - Python 3.10 이상
 - OpenAI API Key ([발급 방법](https://platform.openai.com/api-keys))
 
+## 📥 GitHub에서 다운로드
+
+### 방법 1: ZIP 파일 다운로드 (초보자 권장)
+
+1. GitHub 저장소 페이지로 이동
+2. 녹색 **Code** 버튼 클릭
+3. **Download ZIP** 선택
+4. 다운로드한 파일 압축 해제
+5. `pdf_translator` 폴더로 이동
+
+### 방법 2: Git Clone (Git 사용자)
+
+```bash
+git clone https://github.com/your-username/AiCode.git
+cd AiCode/pdf_translator
+```
+
+> 📘 **자세한 가이드**: Windows 사용자는 [WINDOWS_SETUP.md](WINDOWS_SETUP.md)의 **GitHub에서 프로젝트 다운로드** 섹션을 참고하세요.
+
 ## 🚀 설치 및 실행
 
-### 빠른 시작 (Windows)
+### 빠른 시작 (Windows) - 3단계로 끝!
 
-Windows 사용자는 자동 스크립트로 간편하게 설치할 수 있습니다:
+#### 1️⃣ GitHub에서 다운로드
+- GitHub 페이지에서 **Code** → **Download ZIP**
+- 압축 해제 후 `pdf_translator` 폴더로 이동
 
-#### 1. 초기 설정 (최초 1회만)
+#### 2️⃣ 초기 설정 (최초 1회만)
+- `setup.bat` 파일 **더블클릭**
+- 메모장이 열리면 OpenAI API 키 입력 후 저장
 
-`setup.bat` 파일을 **더블클릭** 하세요.
+#### 3️⃣ 앱 실행
+- `run.bat` 파일 **더블클릭**
+- 브라우저가 자동으로 열립니다! 🎉
 
-자동으로 실행됩니다:
-- ✅ 가상환경 생성
-- ✅ 패키지 설치
-- ✅ .env 파일 생성
-
-#### 2. 앱 실행
-
-`run.bat` 파일을 **더블클릭** 하세요.
-
-브라우저가 자동으로 열립니다! 🎉
-
-> 📘 **Windows 상세 가이드**: 문제 해결 및 자세한 설명은 [WINDOWS_SETUP.md](WINDOWS_SETUP.md)를 참고하세요.
+> 📘 **Windows 상세 가이드**: 처음 사용하시거나 문제가 있다면 [WINDOWS_SETUP.md](WINDOWS_SETUP.md)를 참고하세요. Python 설치부터 문제 해결까지 모든 내용이 담겨있습니다.
 
 ---
 

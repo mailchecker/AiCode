@@ -5,12 +5,13 @@ Windows 환경에서 PDF Translation System을 설치하고 실행하는 상세 
 ## 📋 목차
 
 1. [사전 요구사항](#사전-요구사항)
-2. [Python 설치](#python-설치)
-3. [프로젝트 설정](#프로젝트-설정)
-4. [빠른 시작 (자동 스크립트)](#빠른-시작-자동-스크립트)
-5. [수동 설정 (단계별)](#수동-설정-단계별)
-6. [실행 방법](#실행-방법)
-7. [문제 해결](#문제-해결)
+2. [GitHub에서 프로젝트 다운로드](#github에서-프로젝트-다운로드)
+3. [Python 설치](#python-설치)
+4. [프로젝트 설정](#프로젝트-설정)
+5. [빠른 시작 (자동 스크립트)](#빠른-시작-자동-스크립트)
+6. [수동 설정 (단계별)](#수동-설정-단계별)
+7. [실행 방법](#실행-방법)
+8. [문제 해결](#문제-해결)
 
 ---
 
@@ -26,6 +27,120 @@ Windows 환경에서 PDF Translation System을 설치하고 실행하는 상세 
 
 - 💾 최소 2GB 여유 디스크 공간
 - 🧠 최소 4GB RAM
+
+---
+
+## GitHub에서 프로젝트 다운로드
+
+GitHub 저장소에서 프로젝트를 다운로드하는 두 가지 방법이 있습니다.
+
+### 방법 1: ZIP 파일로 다운로드 (초보자 권장)
+
+Git이 설치되어 있지 않거나 명령어가 익숙하지 않은 경우 이 방법을 사용하세요.
+
+1. **GitHub 페이지 접속**
+   - 프로젝트 GitHub 페이지로 이동
+   - 예: `https://github.com/your-username/AiCode`
+
+2. **ZIP 파일 다운로드**
+   - 녹색 **Code** 버튼 클릭
+   - **Download ZIP** 선택
+   - 파일이 다운로드됩니다 (예: `AiCode-main.zip`)
+
+3. **압축 해제**
+   - 다운로드한 ZIP 파일을 원하는 위치로 이동
+     - 권장 위치: `C:\projects` 또는 `C:\Users\사용자명\Documents`
+     - ⚠️ **중요**: 한글이 포함되지 않은 경로 사용 권장
+   - ZIP 파일에 마우스 오른쪽 클릭 → **압축 풀기** 또는 **Extract All**
+   - 압축 해제 완료!
+
+4. **pdf_translator 폴더로 이동**
+   - 압축 해제된 폴더 열기
+   - `pdf_translator` 폴더 찾기
+   - 이 폴더가 작업 디렉토리입니다
+
+**예시 경로:**
+```
+C:\projects\AiCode-main\pdf_translator\
+```
+
+### 방법 2: Git Clone 사용 (고급 사용자)
+
+Git이 설치되어 있는 경우 명령어로 간편하게 복제할 수 있습니다.
+
+#### Git 설치 확인
+
+```cmd
+git --version
+```
+
+출력 예시: `git version 2.42.0`
+
+#### Git이 없는 경우 설치
+
+1. **Git 다운로드**
+   - https://git-scm.com/download/win 접속
+   - 자동으로 다운로드 시작
+
+2. **설치 실행**
+   - 다운로드한 설치 파일 실행
+   - 모든 옵션 기본값으로 설치 (Next 클릭)
+
+3. **설치 확인**
+   - 새로운 명령 프롬프트 열기
+   ```cmd
+   git --version
+   ```
+
+#### 저장소 복제
+
+1. **원하는 위치로 이동**
+   ```cmd
+   cd C:\projects
+   ```
+
+   또는 파일 탐색기에서:
+   - `C:\projects` 폴더 생성 (없는 경우)
+   - 폴더에서 마우스 오른쪽 클릭 → **Open Git Bash here** (또는 주소창에 `cmd` 입력)
+
+2. **Git Clone 실행**
+   ```cmd
+   git clone https://github.com/your-username/AiCode.git
+   ```
+
+   다운로드가 시작됩니다:
+   ```
+   Cloning into 'AiCode'...
+   remote: Enumerating objects: 100, done.
+   remote: Counting objects: 100% (100/100), done.
+   ...
+   ```
+
+3. **pdf_translator 폴더로 이동**
+   ```cmd
+   cd AiCode\pdf_translator
+   ```
+
+### 다운로드 확인
+
+다운로드가 정상적으로 완료되었는지 확인하세요:
+
+```cmd
+dir
+```
+
+다음 파일들이 보여야 합니다:
+```
+app.py
+setup.bat
+run.bat
+requirements.txt
+.env.example
+README.md
+WINDOWS_SETUP.md
+utils 폴더
+output 폴더
+```
 
 ---
 
@@ -69,15 +184,46 @@ Windows 환경에서 PDF Translation System을 설치하고 실행하는 상세 
 
 ## 프로젝트 설정
 
+프로젝트를 다운로드했다면 이제 설정을 시작합니다.
+
 ### 1. 프로젝트 폴더로 이동
 
+#### 파일 탐색기 사용 (권장)
+
+1. **pdf_translator 폴더 찾기**
+   - 다운로드/압축 해제한 위치로 이동
+   - 예: `C:\projects\AiCode-main\pdf_translator`
+
+2. **명령 프롬프트 열기**
+   - 폴더 상단의 주소창 클릭
+   - `cmd` 입력 후 Enter
+   - 해당 위치에서 명령 프롬프트가 열립니다
+
+#### 명령어로 이동
+
 ```cmd
-cd pdf_translator
+REM 예시: 다운로드 위치에 따라 경로 수정
+cd C:\projects\AiCode-main\pdf_translator
+
+REM 또는 Git Clone한 경우
+cd C:\projects\AiCode\pdf_translator
 ```
 
-또는 파일 탐색기에서:
-- `pdf_translator` 폴더로 이동
-- 주소창에 `cmd` 입력 → Enter (해당 위치에서 명령 프롬프트 열림)
+### 2. 위치 확인
+
+현재 위치가 맞는지 확인:
+
+```cmd
+dir
+```
+
+다음 파일들이 보이면 정상입니다:
+```
+app.py
+setup.bat
+run.bat
+requirements.txt
+```
 
 ---
 
@@ -87,26 +233,47 @@ Windows 배치 파일을 사용하여 자동으로 설정하고 실행할 수 �
 
 ### 1. 초기 설정 (최초 1회만)
 
-`setup.bat` 파일을 **더블클릭**하거나:
+**방법 1: 파일 탐색기에서**
+
+1. `pdf_translator` 폴더 열기
+2. `setup.bat` 파일 찾기
+3. `setup.bat` 파일 **더블클릭**
+
+**방법 2: 명령 프롬프트에서**
 
 ```cmd
 setup.bat
 ```
 
 이 스크립트는 자동으로:
+- ✅ Python 설치 확인
 - ✅ 가상환경 생성
+- ✅ pip 업그레이드
 - ✅ 패키지 설치
 - ✅ .env 파일 생성
+- ✅ 메모장으로 API 키 입력 안내
+
+완료되면 메모장이 열립니다:
+1. `your_openai_api_key_here`를 실제 API 키로 변경
+2. 파일 저장 (Ctrl + S)
+3. 메모장 닫기
 
 ### 2. 앱 실행
 
-`run.bat` 파일을 **더블클릭**하거나:
+**방법 1: 파일 탐색기에서**
+
+1. `pdf_translator` 폴더에서
+2. `run.bat` 파일 **더블클릭**
+
+**방법 2: 명령 프롬프트에서**
 
 ```cmd
 run.bat
 ```
 
 브라우저가 자동으로 열립니다! 🎉
+
+> 💡 **팁**: `run.bat`의 바로가기를 바탕화면에 만들어두면 매번 더블클릭으로 실행할 수 있습니다!
 
 ---
 
