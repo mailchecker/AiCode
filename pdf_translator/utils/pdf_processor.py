@@ -198,11 +198,11 @@ class PDFTranslator:
                     # 텍스트가 영역에 맞도록 자동 조정
                     try:
                         if self.korean_font:
-                            # 등록된 한글 폰트 사용
+                            # 등록된 한글 폰트 이름 사용
                             rc = page.insert_textbox(
                                 bbox,
                                 translated_text,
-                                font=self.korean_font,
+                                fontname=self.korean_font.name,
                                 fontsize=font_size,
                                 color=self._int_to_rgb(font_color),
                                 align=fitz.TEXT_ALIGN_LEFT
@@ -225,7 +225,7 @@ class PDFTranslator:
                                 rc = page.insert_textbox(
                                     bbox,
                                     translated_text,
-                                    font=self.korean_font,
+                                    fontname=self.korean_font.name,
                                     fontsize=11,
                                     color=(0, 0, 0),
                                     align=fitz.TEXT_ALIGN_LEFT
@@ -252,7 +252,7 @@ class PDFTranslator:
                                     rc = page.insert_textbox(
                                         bbox,
                                         translated_text,
-                                        font=self.korean_font,
+                                        fontname=self.korean_font.name,
                                         fontsize=smaller_size,
                                         color=self._int_to_rgb(font_color),
                                         align=fitz.TEXT_ALIGN_LEFT
@@ -273,7 +273,7 @@ class PDFTranslator:
                                         rc = page.insert_textbox(
                                             bbox,
                                             translated_text,
-                                            font=self.korean_font,
+                                            fontname=self.korean_font.name,
                                             fontsize=smaller_size,
                                             color=(0, 0, 0),
                                             align=fitz.TEXT_ALIGN_LEFT
