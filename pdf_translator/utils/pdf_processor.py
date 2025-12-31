@@ -147,20 +147,6 @@ class PDFTranslator:
             print(f"\nProcessing page {page_idx + 1}/{total_pages}...")
             page = doc[page_idx]
 
-            # 페이지에 한글 폰트 등록
-            korean_fontname = None
-            if self.korean_font:
-                try:
-                    # 폰트 버퍼를 사용하여 페이지에 등록 (fontname 명시)
-                    korean_fontname = "F0"
-                    page.insert_font(fontname=korean_fontname, fontbuffer=self.korean_font.buffer)
-                    print(f"[DEBUG] Korean font registered on page: {korean_fontname}")
-                except Exception as e:
-                    print(f"[WARNING] Failed to register font on page: {e}")
-                    korean_fontname = None
-            else:
-                print(f"[WARNING] No Korean font available!")
-
             # 텍스트 블록 추출 (위치 정보 포함)
             blocks = page.get_text("dict")["blocks"]
 
@@ -169,7 +155,8 @@ class PDFTranslator:
 
             print(f"Found {len(text_blocks)} text blocks on page {page_idx + 1}")
 
-            # 각 텍스트 블록 처리 (블록별로 redaction 후 삽입)
+            # 1단계: 모든 블록을 번역하고 정보 수집
+            translated_data = []
             for block_idx, block in enumerate(text_blocks):
                 try:
                     # 블록 내의 모든 텍스트 추출
@@ -220,11 +207,48 @@ class PDFTranslator:
                         if block_idx == 0:
                             print(f"[DEBUG] Bright color detected, changed to black")
 
-                    # 먼저 원본 텍스트 영역을 redaction으로 삭제
-                    page.add_redact_annot(bbox)
-                    page.apply_redactions()  # 즉시 적용하여 원본 텍스트만 삭제
+                    # 번역 데이터 저장
+                    translated_data.append({
+                        'bbox': bbox,
+                        'text': translated_text,
+                        'font_size': font_size,
+                        'color': rgb_color,
+                        'block_idx': block_idx
+                    })
 
-                    # 이제 번역된 텍스트 삽입 (한글 폰트 사용)
+                    # 원본 텍스트를 redaction으로 마크
+                    page.add_redact_annot(bbox)
+
+                except Exception as e:
+                    print(f"Error processing block {block_idx} on page {page_idx + 1}: {e}")
+                    continue
+
+            # 2단계: 모든 원본 텍스트를 한 번에 삭제
+            print(f"[DEBUG] Applying redactions for page {page_idx + 1}")
+            page.apply_redactions()
+
+            # 3단계: 한글 폰트 등록 (redaction 후에)
+            korean_fontname = None
+            if self.korean_font:
+                try:
+                    korean_fontname = "F0"
+                    page.insert_font(fontname=korean_fontname, fontbuffer=self.korean_font.buffer)
+                    print(f"[DEBUG] Korean font registered on page: {korean_fontname}")
+                except Exception as e:
+                    print(f"[WARNING] Failed to register font on page: {e}")
+                    korean_fontname = None
+            else:
+                print(f"[WARNING] No Korean font available!")
+
+            # 4단계: 모든 번역된 텍스트 삽입
+            for data in translated_data:
+                try:
+                    bbox = data['bbox']
+                    translated_text = data['text']
+                    font_size = data['font_size']
+                    rgb_color = data['color']
+                    block_idx = data['block_idx']
+
                     rc = -1
                     try:
                         if korean_fontname:
@@ -327,7 +351,7 @@ class PDFTranslator:
                         print(f"[WARNING] Failed to insert text for block {block_idx}")
 
                 except Exception as e:
-                    print(f"Error processing block {block_idx} on page {page_idx + 1}: {e}")
+                    print(f"Error inserting text for block {block_idx} on page {page_idx + 1}: {e}")
                     continue
 
         # 저장
