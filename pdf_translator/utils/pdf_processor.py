@@ -169,10 +169,7 @@ class PDFTranslator:
 
             print(f"Found {len(text_blocks)} text blocks on page {page_idx + 1}")
 
-            # redaction annotations 리스트
-            redaction_annots = []
-
-            # 각 텍스트 블록 처리
+            # 각 텍스트 블록 처리 (블록별로 redaction 후 삽입)
             for block_idx, block in enumerate(text_blocks):
                 try:
                     # 블록 내의 모든 텍스트 추출
@@ -223,7 +220,11 @@ class PDFTranslator:
                         if block_idx == 0:
                             print(f"[DEBUG] Bright color detected, changed to black")
 
-                    # 번역된 텍스트 삽입 (한글 폰트 사용)
+                    # 먼저 원본 텍스트 영역을 redaction으로 삭제
+                    page.add_redact_annot(bbox)
+                    page.apply_redactions()  # 즉시 적용하여 원본 텍스트만 삭제
+
+                    # 이제 번역된 텍스트 삽입 (한글 폰트 사용)
                     rc = -1
                     try:
                         if korean_fontname:
@@ -322,22 +323,12 @@ class PDFTranslator:
                             if rc >= 0:
                                 break
 
-                    # 텍스트 삽입 성공 시에만 원본 텍스트 영역을 redaction으로 표시
-                    if rc >= 0:
-                        page.add_redact_annot(bbox)
-                        redaction_annots.append(True)
-                    else:
-                        redaction_annots.append(False)
-                        print(f"[WARNING] Failed to insert text for block {block_idx}, keeping original")
+                    if rc < 0:
+                        print(f"[WARNING] Failed to insert text for block {block_idx}")
 
                 except Exception as e:
                     print(f"Error processing block {block_idx} on page {page_idx + 1}: {e}")
-                    redaction_annots.append(False)
                     continue
-
-            # 모든 텍스트 처리 후 redaction 일괄 적용
-            print(f"[DEBUG] Applying redactions for page {page_idx + 1}")
-            page.apply_redactions()
 
         # 저장
         doc.save(output_path)
