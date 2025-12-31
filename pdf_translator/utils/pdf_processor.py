@@ -21,6 +21,16 @@ class PDFTranslator:
         """
         self.translator = translator
         self.korean_font_path = self._get_korean_font()
+        self.korean_font = None
+
+        # 한글 폰트를 미리 로드
+        if self.korean_font_path:
+            try:
+                self.korean_font = fitz.Font(fontfile=self.korean_font_path)
+                print(f"Korean font loaded: {self.korean_font_path}")
+            except Exception as e:
+                print(f"Failed to load Korean font: {e}")
+                self.korean_font = None
 
     def _get_korean_font(self) -> Optional[str]:
         """
@@ -137,12 +147,18 @@ class PDFTranslator:
             print(f"\nProcessing page {page_idx + 1}/{total_pages}...")
             page = doc[page_idx]
 
-            # 디버그: 폰트 경로 확인
-            if self.korean_font_path:
-                print(f"[DEBUG] Korean font path: {self.korean_font_path}")
-                print(f"[DEBUG] Font file exists: {os.path.exists(self.korean_font_path)}")
+            # 페이지에 한글 폰트 등록
+            korean_fontname = None
+            if self.korean_font:
+                try:
+                    # 폰트 버퍼를 사용하여 페이지에 등록
+                    korean_fontname = page.insert_font(fontbuffer=self.korean_font.buffer)
+                    print(f"[DEBUG] Korean font registered on page: {korean_fontname}")
+                except Exception as e:
+                    print(f"[WARNING] Failed to register font on page: {e}")
+                    korean_fontname = None
             else:
-                print(f"[WARNING] No Korean font path detected!")
+                print(f"[WARNING] No Korean font available!")
 
             # 텍스트 블록 추출 (위치 정보 포함)
             blocks = page.get_text("dict")["blocks"]
@@ -202,16 +218,16 @@ class PDFTranslator:
                     # 번역된 텍스트 삽입 (한글 폰트 사용)
                     # 텍스트가 영역에 맞도록 자동 조정
                     try:
-                        if self.korean_font_path:
-                            # 한글 폰트 파일 직접 사용
+                        if korean_fontname:
+                            # 등록된 한글 폰트 이름 사용
                             if block_idx == 0:
-                                print(f"[DEBUG] Inserting text with fontfile: {self.korean_font_path}")
+                                print(f"[DEBUG] Inserting text with fontname: {korean_fontname}")
                                 print(f"[DEBUG] Font size: {font_size}, Color: {self._int_to_rgb(font_color)}")
 
                             rc = page.insert_textbox(
                                 bbox,
                                 translated_text,
-                                fontfile=self.korean_font_path,
+                                fontname=korean_fontname,
                                 fontsize=font_size,
                                 color=self._int_to_rgb(font_color),
                                 align=fitz.TEXT_ALIGN_LEFT
@@ -233,11 +249,11 @@ class PDFTranslator:
                         print(f"Font error, using fallback: {font_error}")
                         # Fallback: 기본 설정으로 재시도
                         try:
-                            if self.korean_font_path:
+                            if korean_fontname:
                                 rc = page.insert_textbox(
                                     bbox,
                                     translated_text,
-                                    fontfile=self.korean_font_path,
+                                    fontname=korean_fontname,
                                     fontsize=11,
                                     color=(0, 0, 0),
                                     align=fitz.TEXT_ALIGN_LEFT
@@ -260,11 +276,11 @@ class PDFTranslator:
                         for smaller_size in range(int(font_size) - 1, 6, -1):
                             page.draw_rect(bbox, color=(1, 1, 1), fill=(1, 1, 1))
                             try:
-                                if self.korean_font_path:
+                                if korean_fontname:
                                     rc = page.insert_textbox(
                                         bbox,
                                         translated_text,
-                                        fontfile=self.korean_font_path,
+                                        fontname=korean_fontname,
                                         fontsize=smaller_size,
                                         color=self._int_to_rgb(font_color),
                                         align=fitz.TEXT_ALIGN_LEFT
@@ -281,11 +297,11 @@ class PDFTranslator:
                             except:
                                 # 최후의 수단: 최소한의 설정으로 시도
                                 try:
-                                    if self.korean_font_path:
+                                    if korean_fontname:
                                         rc = page.insert_textbox(
                                             bbox,
                                             translated_text,
-                                            fontfile=self.korean_font_path,
+                                            fontname=korean_fontname,
                                             fontsize=smaller_size,
                                             color=(0, 0, 0),
                                             align=fitz.TEXT_ALIGN_LEFT
