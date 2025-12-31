@@ -29,39 +29,64 @@ PDF 문서의 텍스트를 번역하면서 **원본 레이아웃을 유지**하�
 
 ## 🚀 설치 및 실행
 
-### 1. 저장소 클론
+### 빠른 시작 (Windows)
+
+Windows 사용자는 자동 스크립트로 간편하게 설치할 수 있습니다:
+
+#### 1. 초기 설정 (최초 1회만)
+
+`setup.bat` 파일을 **더블클릭** 하세요.
+
+자동으로 실행됩니다:
+- ✅ 가상환경 생성
+- ✅ 패키지 설치
+- ✅ .env 파일 생성
+
+#### 2. 앱 실행
+
+`run.bat` 파일을 **더블클릭** 하세요.
+
+브라우저가 자동으로 열립니다! 🎉
+
+> 📘 **Windows 상세 가이드**: 문제 해결 및 자세한 설명은 [WINDOWS_SETUP.md](WINDOWS_SETUP.md)를 참고하세요.
+
+---
+
+### 수동 설치 (Linux/macOS 또는 고급 사용자)
+
+#### 1. 저장소 클론
 
 ```bash
 cd pdf_translator
 ```
 
-### 2. 가상환경 생성 (권장)
+#### 2. 가상환경 생성 (권장)
 
 ```bash
 # 가상환경 생성
 python -m venv venv
 
 # 가상환경 활성화
-# Windows
-venv\Scripts\activate
+# Windows (PowerShell)
+venv\Scripts\Activate.ps1
+# Windows (cmd)
+venv\Scripts\activate.bat
 # Linux/macOS
 source venv/bin/activate
 ```
 
-### 3. 패키지 설치
+#### 3. 패키지 설치
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. 환경변수 설정
+#### 4. 환경변수 설정
 
+**Linux/macOS:**
 ```bash
-# .env 파일 생성
 cp .env.example .env
-
-# .env 파일 편집하여 API 키 입력
-# OPENAI_API_KEY=your_api_key_here
+nano .env  # 또는 원하는 에디터 사용
 ```
 
 **Windows:**
@@ -75,7 +100,7 @@ notepad .env
 OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-### 5. Streamlit 앱 실행
+#### 5. Streamlit 앱 실행
 
 ```bash
 streamlit run app.py
@@ -124,12 +149,17 @@ streamlit run app.py
 pdf_translator/
 ├── app.py                    # Streamlit 메인 앱
 ├── utils/
+│   ├── __init__.py
 │   ├── translator.py         # OpenAI 번역 서비스
 │   └── pdf_processor.py      # PDF 처리 및 번역 로직
 ├── output/                   # 번역된 PDF 출력 디렉토리
 ├── requirements.txt          # Python 패키지 목록
 ├── .env.example             # 환경변수 템플릿
-└── README.md                # 이 파일
+├── .gitignore               # Git 제외 파일 목록
+├── setup.bat                # Windows 자동 설정 스크립트
+├── run.bat                  # Windows 실행 스크립트
+├── README.md                # 이 파일
+└── WINDOWS_SETUP.md         # Windows 상세 설치 가이드
 ```
 
 ## 🔧 주요 모듈 설명
@@ -204,27 +234,43 @@ Page Range: Page Range → 1-20
 
 ## 🐛 문제 해결
 
-### API 키 오류
+### 공통 문제
+
+#### API 키 오류
 ```
 ⚠️ OPENAI_API_KEY 환경변수가 설정되지 않았습니다!
 ```
 → `.env` 파일에 올바른 API 키를 설정했는지 확인
 
-### 페이지 범위 오류
+#### 페이지 범위 오류
 ```
 Invalid page range format
 ```
 → 페이지 범위 형식을 확인 (예: `1-10`, `5`)
 
-### 폰트 오류
+#### 폰트 오류
 ```
 Font error
 ```
 → PyMuPDF가 기본 폰트로 대체합니다. 정상 작동합니다.
 
-### 메모리 부족
+#### 메모리 부족
 대용량 PDF 처리 시 메모리 부족 발생 가능
 → 페이지 범위를 나눠서 처리
+
+### Windows 문제
+
+Windows 사용자는 [WINDOWS_SETUP.md](WINDOWS_SETUP.md)의 **문제 해결** 섹션을 참고하세요:
+
+- 실행 정책 오류 (PowerShell)
+- Python 명령어를 찾을 수 없음
+- pip 설치 오류
+- 방화벽 경고
+- 포트 충돌
+- 한글 경로 문제
+- PyMuPDF 설치 오류
+
+자세한 해결 방법은 [WINDOWS_SETUP.md#문제-해결](WINDOWS_SETUP.md#문제-해결)을 확인하세요.
 
 ## 📝 TODO
 
