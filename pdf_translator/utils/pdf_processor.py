@@ -152,7 +152,7 @@ class PDFTranslator:
             if self.korean_font:
                 try:
                     # 폰트 버퍼를 사용하여 페이지에 등록 (fontname 명시)
-                    korean_fontname = "F0"  # 폰트 이름 지정
+                    korean_fontname = "F0"
                     page.insert_font(fontname=korean_fontname, fontbuffer=self.korean_font.buffer)
                     print(f"[DEBUG] Korean font registered on page: {korean_fontname}")
                 except Exception as e:
@@ -192,15 +192,14 @@ class PDFTranslator:
                     )
 
                     # 디버그: 번역된 텍스트 샘플 출력
-                    if block_idx == 0:  # 첫 번째 블록만
+                    if block_idx == 0:
                         print(f"[DEBUG] Original text: {block_text[:50]}...")
                         print(f"[DEBUG] Translated text: {translated_text[:50]}...")
-                        # 한글이 포함되어 있는지 확인
                         has_korean = any('\uac00' <= c <= '\ud7a3' for c in translated_text)
                         print(f"[DEBUG] Contains Korean characters: {has_korean}")
 
                     # 원본 텍스트 영역 정보
-                    bbox = block["bbox"]  # (x0, y0, x1, y1)
+                    bbox = block["bbox"]
 
                     # 첫 번째 span의 폰트 정보 가져오기
                     first_span = block["lines"][0]["spans"][0] if block.get("lines") and block["lines"][0].get("spans") else None
@@ -208,7 +207,7 @@ class PDFTranslator:
                     # 폰트 크기와 색상 정보
                     if first_span:
                         font_size = first_span.get("size", 11)
-                        font_color = first_span.get("color", 0)  # RGB as integer
+                        font_color = first_span.get("color", 0)
                     else:
                         font_size = 11
                         font_color = 0
@@ -217,10 +216,8 @@ class PDFTranslator:
                     page.draw_rect(bbox, color=(1, 1, 1), fill=(1, 1, 1))
 
                     # 번역된 텍스트 삽입 (한글 폰트 사용)
-                    # 텍스트가 영역에 맞도록 자동 조정
                     try:
                         if korean_fontname:
-                            # 등록된 한글 폰트 이름 사용
                             if block_idx == 0:
                                 print(f"[DEBUG] Inserting text with fontname: {korean_fontname}")
                                 print(f"[DEBUG] Font size: {font_size}, Color: {self._int_to_rgb(font_color)}")
@@ -237,7 +234,6 @@ class PDFTranslator:
                             if block_idx == 0:
                                 print(f"[DEBUG] insert_textbox result: {rc}")
                         else:
-                            # 폰트가 없으면 기본 폰트 사용 (영어만 가능)
                             rc = page.insert_textbox(
                                 bbox,
                                 translated_text,
@@ -248,7 +244,6 @@ class PDFTranslator:
                             )
                     except Exception as font_error:
                         print(f"Font error, using fallback: {font_error}")
-                        # Fallback: 기본 설정으로 재시도
                         try:
                             if korean_fontname:
                                 rc = page.insert_textbox(
@@ -269,11 +264,10 @@ class PDFTranslator:
                                     align=fitz.TEXT_ALIGN_LEFT
                                 )
                         except:
-                            rc = -1  # 실패
+                            rc = -1
 
                     # 텍스트가 영역을 초과하면 폰트 크기 줄이기
                     if rc < 0:
-                        # 폰트 크기를 줄여가며 재시도
                         for smaller_size in range(int(font_size) - 1, 6, -1):
                             page.draw_rect(bbox, color=(1, 1, 1), fill=(1, 1, 1))
                             try:
@@ -296,7 +290,6 @@ class PDFTranslator:
                                         align=fitz.TEXT_ALIGN_LEFT
                                     )
                             except:
-                                # 최후의 수단: 최소한의 설정으로 시도
                                 try:
                                     if korean_fontname:
                                         rc = page.insert_textbox(
@@ -342,7 +335,7 @@ class PDFTranslator:
             (r, g, b) tuple with values 0-1
         """
         if color_int == 0:
-            return (0, 0, 0)  # Black
+            return (0, 0, 0)
 
         r = ((color_int >> 16) & 0xFF) / 255.0
         g = ((color_int >> 8) & 0xFF) / 255.0
