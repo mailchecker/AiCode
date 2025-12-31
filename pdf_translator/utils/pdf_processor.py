@@ -151,8 +151,9 @@ class PDFTranslator:
             korean_fontname = None
             if self.korean_font:
                 try:
-                    # 폰트 버퍼를 사용하여 페이지에 등록
-                    korean_fontname = page.insert_font(fontbuffer=self.korean_font.buffer)
+                    # 폰트 버퍼를 사용하여 페이지에 등록 (fontname 명시)
+                    korean_fontname = "F0"  # 폰트 이름 지정
+                    page.insert_font(fontname=korean_fontname, fontbuffer=self.korean_font.buffer)
                     print(f"[DEBUG] Korean font registered on page: {korean_fontname}")
                 except Exception as e:
                     print(f"[WARNING] Failed to register font on page: {e}")
