@@ -62,3 +62,4 @@ minio_data/
 *.tmp
 *.temp
 .cache/
+*.tar.gz
