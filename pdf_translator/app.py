@@ -8,6 +8,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from utils.translator import TextTranslator
 from utils.pdf_processor import PDFTranslator
+from utils.pdf_processor_v2 import PDFTranslatorV2
 
 # .env 파일 로드
 load_dotenv(encoding='utf-8')
@@ -88,6 +89,16 @@ def main():
             options=list(MODELS.keys())
         )
         model = MODELS[model_display]
+
+        # 처리 엔진 선택
+        st.subheader("⚙️ Processing Engine")
+        engine_version = st.radio(
+            "Select Engine",
+            options=["V2 (Professional - Span-level)", "V1 (Legacy - Block-level)"],
+            index=0,
+            help="V2: Professional grade with precise positioning\nV1: Legacy version with block-level processing"
+        )
+        use_v2 = engine_version.startswith("V2")
 
         # 페이지 범위 선택
         st.subheader("📑 Page Range")
@@ -184,7 +195,13 @@ def main():
                 # 번역기 초기화
                 status_text.text("🔧 Initializing translator...")
                 translator = TextTranslator(api_key=api_key)
-                pdf_translator = PDFTranslator(translator)
+
+                if use_v2:
+                    pdf_translator = PDFTranslatorV2(translator)
+                    status_text.text("🔧 Using V2 Professional Engine...")
+                else:
+                    pdf_translator = PDFTranslator(translator)
+                    status_text.text("🔧 Using V1 Legacy Engine...")
 
                 # 진행 상황 콜백
                 def progress_callback(current_page, total_pages):
