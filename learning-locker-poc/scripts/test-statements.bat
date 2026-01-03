@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM Learning Locker xAPI Statement 테스트 스크립트 (Windows 배치 파일)
 REM
 REM 사용법:

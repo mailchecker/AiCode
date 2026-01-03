@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 REM Learning Locker POC - Windows 빠른 시작 스크립트
 REM 이 배치 파일은 Windows에서 Learning Locker를 쉽게 시작할 수 있도록 도와줍니다.
 
