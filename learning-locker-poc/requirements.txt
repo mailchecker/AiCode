@@ -1,0 +1,4 @@
+# Learning Locker POC - Python 테스트 스크립트 의존성
+
+# HTTP 요청 라이브러리
+requests>=2.31.0
