@@ -1,8 +1,7 @@
 # Learning Locker v2 Dockerfile
 # GitHub 저장소에서 직접 빌드
 
-# Alpine 대신 Debian 기반 사용 (gRPC 호환성 문제 해결)
-# Learning Locker v2는 Node.js 8을 요구하지만 Node.js 10으로 호환
+# Debian Buster가 EOL되어 archive 저장소 사용
 FROM node:10-buster-slim
 
 LABEL maintainer="Learning Locker POC"
@@ -10,6 +9,12 @@ LABEL description="Learning Locker LRS - xAPI Learning Record Store"
 
 # 작업 디렉토리 설정
 WORKDIR /opt/learninglocker
+
+# Debian Buster가 EOL되어 archive 저장소로 변경
+RUN sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list && \
+    sed -i 's|http://security.debian.org/debian-security|http://archive.debian.org/debian-security|g' /etc/apt/sources.list && \
+    sed -i '/stretch-updates/d' /etc/apt/sources.list && \
+    echo "Acquire::Check-Valid-Until false;" > /etc/apt/apt.conf.d/99no-check-valid-until
 
 # 필수 패키지 및 빌드 도구 설치
 RUN apt-get update && apt-get install -y --no-install-recommends \
