@@ -1,0 +1,45 @@
+# Docker 빌드 시 제외할 파일/폴더
+
+# Git
+.git
+.gitignore
+
+# 문서
+README.md
+WINDOWS_GUIDE.md
+README-ENCODING.md
+*.md
+
+# 스토리지 (컨테이너 내부에서 생성)
+storage/
+backups/
+
+# 환경 설정
+.env
+.env.example
+
+# 스크립트 (호스트에서만 사용)
+scripts/
+sample-data/
+
+# Docker 관련
+docker-compose.yml
+.dockerignore
+
+# Nginx 설정 (별도 마운트)
+nginx/
+
+# 임시 파일
+*.log
+*.tmp
+tmp/
+temp/
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

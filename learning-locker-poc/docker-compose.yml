@@ -1,7 +1,6 @@
-version: '3.8'
-
 # Learning Locker LRS Docker Compose 설정
 # xAPI 기반 학습 기록 저장소 (Learning Record Store)
+# GitHub에서 직접 빌드
 
 services:
   # MongoDB - Learning Locker의 주 데이터베이스
@@ -45,7 +44,10 @@ services:
 
   # Learning Locker API 서버
   ll_api:
-    image: learninglocker/learninglocker:v2.7.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: learninglocker-custom:latest
     container_name: ll_api
     restart: unless-stopped
     depends_on:
@@ -77,15 +79,10 @@ services:
       - "8080:8080"
     networks:
       - ll_network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Learning Locker UI 서버
   ll_ui:
-    image: learninglocker/learninglocker:v2.7.0
+    image: learninglocker-custom:latest
     container_name: ll_ui
     restart: unless-stopped
     depends_on:
@@ -112,15 +109,10 @@ services:
       - "3000:3000"
     networks:
       - ll_network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Learning Locker Worker - 백그라운드 작업 처리
   ll_worker:
-    image: learninglocker/learninglocker:v2.7.0
+    image: learninglocker-custom:latest
     container_name: ll_worker
     restart: unless-stopped
     depends_on:
@@ -157,11 +149,6 @@ services:
       - "443:443"
     networks:
       - ll_network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
 networks:
   ll_network:
