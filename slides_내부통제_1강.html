@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>내부통제 역량강화 1강 — 업무규정의 이해</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #F7F5F0;
+      --white:      #FFFFFF;
+      --navy:       #1A2E5C;
+      --navy-light: #2A4580;
+      --red:        #C0392B;
+      --blue:       #2980B9;
+      --gold:       #C9A840;
+      --text:       #2D2D2D;
+      --muted:      #666666;
+      --border:     #E0DDD6;
+      --tab1:       #E63946;
+      --tab2:       #2E86AB;
+      --tab3:       #52B788;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', '맑은 고딕', sans-serif;
+      color: var(--text);
+    }
+
+    /* ── Scroll container ── */
+    #wrapper {
+      height: 100vh;
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      scroll-behavior: smooth;
+    }
+
+    .slide {
+      height: 100vh;
+      height: 100dvh;
+      scroll-snap-align: start;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+    }
+
+    /* ── Progress bar ── */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 4px;
+      background: var(--navy);
+      transition: width .3s ease;
+      z-index: 200;
+    }
+
+    /* ── Nav dots ── */
+    #dots {
+      position: fixed;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      z-index: 200;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--border);
+      cursor: pointer;
+      transition: all .25s;
+    }
+    .dot.on { background: var(--navy); transform: scale(1.4); }
+
+    /* ── Arrow buttons ── */
+    .arrow {
+      position: fixed;
+      bottom: 22px;
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 50%;
+      width: 36px; height: 36px;
+      cursor: pointer;
+      color: var(--navy);
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color .2s, background .2s;
+      z-index: 200;
+    }
+    .arrow:hover { border-color: var(--navy); background: var(--bg); }
+    #prev { left: 22px; }
+    #next { left: 68px; }
+
+    #counter {
+      position: fixed;
+      bottom: 28px;
+      right: 40px;
+      font-size: clamp(.55rem, 1.2vw, .72rem);
+      color: var(--muted);
+      z-index: 200;
+    }
+
+    /* ── Left tab accent ── */
+    .tab {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 7px;
+    }
+
+    /* ── Shared layout ── */
+    .inner {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: clamp(28px,5vw,72px) clamp(28px,5vw,80px) clamp(48px,8vh,72px);
+      overflow: hidden;
+    }
+
+    .sec-label {
+      font-size: clamp(.52rem, 1.1vw, .68rem);
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .slide-h {
+      font-size: clamp(1.3rem, 3.8vw, 2.6rem);
+      font-weight: 800;
+      color: var(--navy);
+      line-height: 1.25;
+    }
+
+    .accent-bar {
+      width: 44px; height: 4px;
+      border-radius: 2px;
+      margin-top: 10px;
+      margin-bottom: clamp(14px,3vh,32px);
+    }
+
+    /* ── Grid helpers ── */
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(10px,1.8vw,22px); }
+    .g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: clamp(10px,1.5vw,20px); }
+
+    /* ── Card variants ── */
+    .card {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: clamp(12px,2.2vh,22px) clamp(12px,2vw,20px);
+    }
+    .card-border { border-left: 4px solid var(--navy); }
+    .card-border.r { border-left-color: var(--tab1); }
+    .card-border.b { border-left-color: var(--tab2); }
+    .card-border.g { border-left-color: var(--tab3); }
+    .card-border.gold { border-left-color: var(--gold); }
+
+    .card-top { border-top: 4px solid var(--navy); }
+
+    /* ── Numbered row ── */
+    .nrow {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: clamp(10px,1.8vh,18px) clamp(12px,2vw,20px);
+    }
+    .ncircle {
+      width: clamp(28px,3.8vw,38px);
+      height: clamp(28px,3.8vw,38px);
+      border-radius: 50%;
+      background: var(--navy);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: clamp(.6rem,1.3vw,.82rem);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .nrow h4 {
+      font-size: clamp(.72rem,1.5vw,.92rem);
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: 4px;
+    }
+    .nrow p {
+      font-size: clamp(.6rem,1.25vw,.78rem);
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ── Law box ── */
+    .law {
+      background: #EEF2F9;
+      border: 1px solid #C5D3E8;
+      border-radius: 10px;
+      padding: clamp(10px,1.8vh,18px) clamp(12px,2vw,20px);
+      font-size: clamp(.6rem,1.25vw,.78rem);
+      line-height: 1.6;
+    }
+    .law .law-h {
+      font-weight: 700;
+      color: var(--navy-light);
+      margin-bottom: 6px;
+      font-size: clamp(.62rem,1.3vw,.8rem);
+    }
+
+    /* ── Highlight box (dark) ── */
+    .hl {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+      color: white;
+      border-radius: 12px;
+      padding: clamp(14px,2.5vh,24px);
+    }
+    .hl h3 { font-size: clamp(.72rem,1.5vw,.92rem); margin-bottom: 6px; opacity: .85; }
+    .hl p  { font-size: clamp(.62rem,1.3vw,.8rem); line-height: 1.6; opacity: .9; }
+
+    /* ── Table ── */
+    .tbl { width: 100%; border-collapse: collapse; font-size: clamp(.6rem,1.25vw,.8rem); }
+    .tbl th {
+      background: var(--navy);
+      color: white;
+      padding: clamp(7px,1.3vh,12px) clamp(8px,1.5vw,14px);
+      text-align: left;
+      font-weight: 600;
+    }
+    .tbl td {
+      padding: clamp(7px,1.3vh,11px) clamp(8px,1.5vw,14px);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    .tbl tr:nth-child(even) td { background: var(--bg); }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: clamp(.52rem,1vw,.68rem);
+      font-weight: 700;
+    }
+    .bn { background: var(--navy); color: white; }
+    .br { background: var(--tab1); color: white; }
+    .bb { background: var(--tab2); color: white; }
+    .bg { background: var(--tab3); color: white; }
+
+    /* ── Flow ── */
+    .flow { display: flex; align-items: stretch; gap: clamp(8px,1.2vw,16px); }
+    .flow-item {
+      flex: 1;
+      text-align: center;
+      background: var(--bg);
+      border-radius: 10px;
+      padding: clamp(12px,2vh,20px) clamp(8px,1.2vw,14px);
+    }
+    .flow-icon { font-size: clamp(1.4rem,3vw,2.4rem); margin-bottom: 6px; }
+    .flow-lbl  { font-size: clamp(.68rem,1.4vw,.88rem); font-weight: 700; color: var(--navy); }
+    .flow-sub  { font-size: clamp(.55rem,1.1vw,.7rem); color: var(--muted); margin-top: 3px; line-height: 1.4; }
+    .flow-arrow { display: flex; align-items: center; color: var(--muted); font-size: 1.3rem; flex-shrink: 0; }
+
+    /* ── TOC ── */
+    .toc-num { font-size: clamp(1.8rem,5vw,3.5rem); font-weight: 900; color: var(--border); line-height: 1; margin-bottom: 6px; }
+    .toc-t   { font-size: clamp(.78rem,1.6vw,1rem); font-weight: 700; color: var(--navy); line-height: 1.3; margin-bottom: 8px; }
+    .toc-sub { font-size: clamp(.58rem,1.2vw,.73rem); color: var(--muted); line-height: 1.8; }
+
+    /* ── Animations ── */
+    @keyframes up { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+    .slide.on .an { animation: up .45s ease both; }
+    .slide.on .an:nth-child(1) { animation-delay: .05s; }
+    .slide.on .an:nth-child(2) { animation-delay: .15s; }
+    .slide.on .an:nth-child(3) { animation-delay: .25s; }
+    .slide.on .an:nth-child(4) { animation-delay: .35s; }
+    @media (prefers-reduced-motion: reduce) { .an { animation: none !important; } }
+
+    /* ── Responsive ── */
+    @media (max-height: 700px) {
+      .inner { padding-top: clamp(18px,3.5vh,40px); padding-bottom: 38px; }
+      .nrow  { padding: 8px 12px; }
+    }
+    @media (max-height: 600px) {
+      .g2, .g3 { gap: 6px; }
+      .accent-bar { margin-bottom: 8px; }
+    }
+    @media (max-width: 620px) {
+      .g2, .g3 { grid-template-columns: 1fr; }
+      .flow { flex-direction: column; }
+      #dots  { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="dots"></div>
+<button class="arrow" id="prev" aria-label="이전">&#8592;</button>
+<button class="arrow" id="next" aria-label="다음">&#8594;</button>
+<div id="counter"></div>
+
+<div id="wrapper">
+
+  <!-- ① 타이틀 -->
+  <section class="slide" id="s0" style="background:var(--navy); justify-content:center; align-items:center; text-align:center;">
+    <div style="position:absolute;top:-80px;right:-80px;width:360px;height:360px;border-radius:50%;background:rgba(255,255,255,.04);"></div>
+    <div style="position:absolute;bottom:-120px;left:-60px;width:480px;height:480px;border-radius:50%;background:rgba(255,255,255,.03);"></div>
+    <div style="position:relative; padding: clamp(20px,5vw,60px);">
+      <div class="badge bn" style="background:var(--gold);color:var(--navy);letter-spacing:.12em;margin-bottom:clamp(14px,3vh,28px);">내부통제 역량강화 &nbsp;·&nbsp; 1강</div>
+      <div style="font-size:clamp(2rem,6vw,4.5rem);font-weight:800;color:white;line-height:1.15;margin-bottom:clamp(10px,2vh,20px);">업무규정의 이해</div>
+      <div style="width:56px;height:3px;background:var(--gold);margin:0 auto clamp(14px,2.5vh,24px);"></div>
+      <div style="font-size:clamp(.9rem,2.3vw,1.6rem);color:rgba(255,255,255,.65);margin-bottom:clamp(16px,3vh,32px);">자금세탁방지(AML) 내부통제제도</div>
+      <div style="font-size:clamp(.65rem,1.5vw,.9rem);color:rgba(255,255,255,.4);">금융정보분석원 &nbsp;·&nbsp; 특정금융정보법</div>
+    </div>
+  </section>
+
+  <!-- ② 목차 -->
+  <section class="slide" id="s1">
+    <div class="tab" style="background:var(--navy);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Contents</div>
+        <div class="slide-h">학습 목차</div>
+        <div class="accent-bar" style="background:var(--navy);"></div>
+      </div>
+      <div class="g3 an" style="flex:1;">
+        <div class="card" style="border-top:4px solid var(--tab1); display:flex; flex-direction:column;">
+          <div class="toc-num">1</div>
+          <div class="toc-t">자금세탁방지를 위한<br>내부통제제도의 의의</div>
+          <div class="toc-sub">· 제도 운영 구조<br>· 금융회사의 역할<br>· 감독규정 제11조<br>· 내부통제 필수 사항</div>
+        </div>
+        <div class="card" style="border-top:4px solid var(--tab2); display:flex; flex-direction:column;">
+          <div class="toc-num">2</div>
+          <div class="toc-t">자금세탁방지 및<br>공중협박자금조달금지에<br>관한 업무규정</div>
+          <div class="toc-sub">· 업무규정의 제정<br>· 업무규정의 역할</div>
+        </div>
+        <div class="card" style="border-top:4px solid var(--tab3); display:flex; flex-direction:column;">
+          <div class="toc-num">3</div>
+          <div class="toc-t">자금세탁방지<br>업무지침의 작성</div>
+          <div class="toc-sub">· 업무지침의 정의<br>· 업무규정과의 차이점<br>· 개정 업무규정<br>&nbsp;&nbsp;달라진 점</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ AML 제도 운영 구조 -->
+  <section class="slide" id="s2">
+    <div class="tab" style="background:var(--tab1);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 1 &nbsp;·&nbsp; 내부통제제도의 의의</div>
+        <div class="slide-h">자금세탁방지제도의 운영 구조</div>
+        <div class="accent-bar" style="background:var(--tab1);"></div>
+      </div>
+      <div class="flow an" style="margin-bottom:clamp(12px,2.5vh,24px);">
+        <div class="flow-item" style="border-top:4px solid var(--tab1);">
+          <div class="flow-icon">🏦</div>
+          <div class="flow-lbl">금융회사</div>
+          <div class="flow-sub">의심거래보고(STR)<br>고액현금거래보고(CTR)</div>
+        </div>
+        <div class="flow-arrow">⟷</div>
+        <div class="flow-item" style="border-top:4px solid var(--tab2);">
+          <div class="flow-icon">🏛</div>
+          <div class="flow-lbl">FIU</div>
+          <div class="flow-sub">금융정보분석원<br>심사 · 분석</div>
+        </div>
+        <div class="flow-arrow">⟷</div>
+        <div class="flow-item" style="border-top:4px solid var(--tab3);">
+          <div class="flow-icon">⚖️</div>
+          <div class="flow-lbl">법집행기관</div>
+          <div class="flow-sub">분석자료 기반<br>수사 · 조사</div>
+        </div>
+      </div>
+      <div class="hl an">
+        <h3>금융회사의 핵심 역할</h3>
+        <p>자금세탁방지업무에서 <strong>가장 중요한 역할을 담당하는 대면기관</strong>으로, 자금세탁행위의 <strong>발견 → 분석 → 보고</strong>를 직접 수행합니다. 이러한 기능이 원활히 작동하려면 금융회사 자체적인 <strong>내부통제시스템</strong>이 완비되어야 합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ 감독규정 제11조 -->
+  <section class="slide" id="s3">
+    <div class="tab" style="background:var(--tab1);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 1 &nbsp;·&nbsp; 감독규정</div>
+        <div class="slide-h">금융회사 지배구조 감독규정<br>제11조 제2항 제6호</div>
+        <div class="accent-bar" style="background:var(--tab1);"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:clamp(8px,1.5vh,14px);flex:1;" class="an">
+        <div class="nrow">
+          <div class="ncircle" style="background:var(--tab1);">가</div>
+          <div>
+            <h4>자금세탁 위험평가체계 구축 및 운영</h4>
+            <p>금융거래에 내재된 자금세탁 위험을 식별·분석·평가하여 위험도에 따라 관리수준을 차등화</p>
+          </div>
+        </div>
+        <div class="nrow">
+          <div class="ncircle" style="background:var(--tab2);">나</div>
+          <div>
+            <h4>독립적 감사체계 마련 및 운영</h4>
+            <p>자금세탁방지 업무 수행 부서로부터 <strong>독립된 부서 또는 외부전문가</strong>가 업무의 적절성·효과성을 검토·평가하고 문제점을 개선</p>
+          </div>
+        </div>
+        <div class="nrow">
+          <div class="ncircle" style="background:var(--tab3);">다</div>
+          <div>
+            <h4>임직원 신원사항 확인 및 교육·연수</h4>
+            <p>임직원이 자금세탁행위 등에 <strong>가담하거나 이용되지 않도록</strong> 사전 예방 체계 구축</p>
+          </div>
+        </div>
+      </div>
+      <div class="an" style="margin-top:clamp(8px,1.5vh,14px);">
+        <span class="badge bn">2018. 4. 1. 금융회사 지배구조 감독규정 개정</span>
+        <span style="font-size:clamp(.58rem,1.2vw,.75rem);color:var(--muted);margin-left:8px;">이사회·최고경영자 등의 역할과 관리책임 강화</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ 내부통제 필수 주요 사항 -->
+  <section class="slide" id="s4">
+    <div class="tab" style="background:var(--tab1);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 1 &nbsp;·&nbsp; 내부통제</div>
+        <div class="slide-h">내부통제 필수 주요 사항</div>
+        <div class="accent-bar" style="background:var(--tab1);"></div>
+      </div>
+      <div class="g2 an" style="flex:1;">
+        <div style="display:flex;flex-direction:column;gap:clamp(8px,1.4vh,13px);">
+          <div class="card card-border" style="flex:1;">
+            <div style="font-size:clamp(.6rem,1.2vw,.72rem);color:var(--muted);margin-bottom:4px;">01</div>
+            <div style="font-size:clamp(.72rem,1.5vw,.9rem);font-weight:700;color:var(--navy);">자금세탁방지업무 담당구성원별<br>역할과 책임</div>
+          </div>
+          <div class="card card-border b" style="flex:1;">
+            <div style="font-size:clamp(.6rem,1.2vw,.72rem);color:var(--muted);margin-bottom:4px;">02</div>
+            <div style="font-size:clamp(.72rem,1.5vw,.9rem);font-weight:700;color:var(--navy);">내부통제 구축을 위한<br>임직원 교육 및 연수</div>
+          </div>
+          <div class="card card-border gold" style="flex:1;">
+            <div style="font-size:clamp(.6rem,1.2vw,.72rem);color:var(--muted);margin-bottom:4px;">03</div>
+            <div style="font-size:clamp(.72rem,1.5vw,.9rem);font-weight:700;color:var(--navy);">직원알기제도</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:clamp(8px,1.4vh,13px);">
+          <div class="card card-border r" style="flex:1;">
+            <div style="font-size:clamp(.6rem,1.2vw,.72rem);color:var(--muted);margin-bottom:4px;">04</div>
+            <div style="font-size:clamp(.72rem,1.5vw,.9rem);font-weight:700;color:var(--navy);">독립적인 감사체계</div>
+          </div>
+          <div class="card card-border g" style="flex:1;">
+            <div style="font-size:clamp(.6rem,1.2vw,.72rem);color:var(--muted);margin-bottom:4px;">05</div>
+            <div style="font-size:clamp(.72rem,1.5vw,.9rem);font-weight:700;color:var(--navy);">신상품 등 자금세탁방지<br>절차 수립</div>
+          </div>
+          <div class="law" style="flex:1;">
+            <div class="law-h">📌 참고 사례</div>
+            <div>2016년 국내 금융회사 미국 지점이 뉴욕연방준비은행·NYDFS로부터 AML 규정 위반으로 제재 받은 사례 이후, <strong>과태료 상한 1천만원 → 1억원</strong>으로 상향 (2019)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑥ 업무규정의 제정 배경 -->
+  <section class="slide" id="s5">
+    <div class="tab" style="background:var(--tab2);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 2 &nbsp;·&nbsp; 업무규정</div>
+        <div class="slide-h">업무규정의 제정 배경</div>
+        <div class="accent-bar" style="background:var(--tab2);"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:clamp(8px,1.5vh,14px);flex:1;" class="an">
+        <div class="nrow">
+          <div class="ncircle" style="background:#999;font-size:.68rem;">2006</div>
+          <div>
+            <h4>FATF 준회원 가입</h4>
+            <p>국제 자금세탁방지기구(FATF) 준회원으로 가입 후 정회원 가입 준비 착수</p>
+          </div>
+        </div>
+        <div class="nrow">
+          <div class="ncircle" style="background:#999;font-size:.68rem;">2008</div>
+          <div>
+            <h4>AML 업무지침 가이드라인 제작</h4>
+            <p>금융정보분석원 명의로 가이드라인 제정 → FATF 상호평가단이 <span style="color:var(--tab1);"><strong>"법규가 아닌 모범규준"</strong>으로 지적, 공식규정화 요구</span></p>
+          </div>
+        </div>
+        <div class="nrow">
+          <div class="ncircle" style="background:var(--tab2);font-size:.65rem;">2010</div>
+          <div>
+            <h4>업무규정 제정</h4>
+            <p>
+              <strong>2010. 3. 26.</strong> &nbsp;특정금융정보법 시행령 제5조 제4항 신설 (법적 근거 마련)<br>
+              <strong>2010. 6. 21.</strong> &nbsp;자금세탁방지 및 공중협박자금조달금지에 관한 업무규정 제정
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑦ 업무규정의 역할 -->
+  <section class="slide" id="s6">
+    <div class="tab" style="background:var(--tab2);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 2 &nbsp;·&nbsp; 업무규정</div>
+        <div class="slide-h">업무규정의 역할</div>
+        <div class="accent-bar" style="background:var(--tab2);"></div>
+      </div>
+      <div class="card card-border b an" style="margin-bottom:clamp(12px,2.2vh,20px);">
+        <p style="font-size:clamp(.7rem,1.5vw,.88rem);line-height:1.6;">특정금융정보법·시행령에 세부사항 전부를 규정하기 어렵기 때문에, <strong>업무규정을 통해 구체적인 세부내용을 규정</strong>합니다.</p>
+      </div>
+      <div class="g3 an" style="margin-bottom:clamp(12px,2.2vh,20px);">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:clamp(1.6rem,3.5vw,2.4rem);margin-bottom:6px;">📋</div>
+          <div style="font-size:clamp(.68rem,1.4vw,.88rem);font-weight:700;color:var(--tab1);">STR</div>
+          <div style="font-size:clamp(.58rem,1.2vw,.73rem);color:var(--muted);margin-top:3px;">의심거래보고</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:clamp(1.6rem,3.5vw,2.4rem);margin-bottom:6px;">💴</div>
+          <div style="font-size:clamp(.68rem,1.4vw,.88rem);font-weight:700;color:var(--tab2);">CTR</div>
+          <div style="font-size:clamp(.58rem,1.2vw,.73rem);color:var(--muted);margin-top:3px;">고액현금거래보고</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:clamp(1.6rem,3.5vw,2.4rem);margin-bottom:6px;">👤</div>
+          <div style="font-size:clamp(.68rem,1.4vw,.88rem);font-weight:700;color:var(--tab3);">CDD</div>
+          <div style="font-size:clamp(.58rem,1.2vw,.73rem);color:var(--muted);margin-top:3px;">고객확인의무</div>
+        </div>
+      </div>
+      <div class="law an">
+        <div class="law-h">특정금융정보법 시행령 제5조 제4항 — 고시 사항</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div>① 내부 보고체제의 수립</div>
+          <div>② 업무지침의 작성 및 운용</div>
+          <div>③ 임직원의 교육 및 연수</div>
+          <div>④ 고객확인의무 확인조치</div>
+          <div>⑤ 자료 및 정보의 보존</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑧ 업무지침의 정의 -->
+  <section class="slide" id="s7">
+    <div class="tab" style="background:var(--tab3);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 3 &nbsp;·&nbsp; 업무지침</div>
+        <div class="slide-h">자금세탁방지 업무지침의 정의</div>
+        <div class="accent-bar" style="background:var(--tab3);"></div>
+      </div>
+      <div class="hl an" style="margin-bottom:clamp(12px,2.2vh,22px);">
+        <h3>업무지침이란?</h3>
+        <p>금융회사 등이 <strong>자신의 업무 특성 또는 금융기법의 변화</strong>를 고려하여, 자신이 자금세탁행위 및 공중협박자금조달행위에 이용되지 않도록 하기 위한 <strong>정책과 이를 이행하기 위한 구체적이고 적절한 조치 등을 서술한 내부지침</strong></p>
+      </div>
+      <div class="g2 an">
+        <div class="law">
+          <div class="law-h">법적 근거</div>
+          <strong>특정금융정보법 제5조 제1항 제2호</strong><br>
+          금융회사에서 자금세탁방지를 위해 직무를 수행할 때 따라야 할 <strong>절차 및 업무지침의 작성·운용</strong> 의무 규정
+        </div>
+        <div class="law">
+          <div class="law-h">명칭과 무관한 적용</div>
+          내규, 규정, 매뉴얼 등 <strong>명칭과 관계없이</strong> 특정금융정보법령에서 '업무지침'으로 정하도록 한 내용이 담겼다면 업무규정의 절차·원칙을 준수해야 함
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑨ 업무지침 vs 업무규정 -->
+  <section class="slide" id="s8">
+    <div class="tab" style="background:var(--tab3);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 3 &nbsp;·&nbsp; 업무지침</div>
+        <div class="slide-h">업무지침 vs 업무규정</div>
+        <div class="accent-bar" style="background:var(--tab3);"></div>
+      </div>
+      <table class="tbl an" style="margin-bottom:clamp(12px,2vh,20px);">
+        <thead>
+          <tr>
+            <th style="width:18%;">구분</th>
+            <th>업무규정</th>
+            <th>업무지침</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600;">성격</td>
+            <td>금융정보분석원 <strong>고시</strong> (법규)</td>
+            <td>금융회사의 <strong>내부 지침</strong></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">제정 주체</td>
+            <td>금융정보분석원</td>
+            <td>금융회사 (이사회 심의·의결)</td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">관계</td>
+            <td colspan="2" style="text-align:center;">업무지침은 업무규정을 기준으로 작성 → <strong>유사한 형태</strong></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="g2 an">
+        <div class="card card-border r">
+          <div style="font-size:clamp(.62rem,1.3vw,.78rem);color:var(--tab1);font-weight:700;margin-bottom:5px;">⚠ 주의사항 1</div>
+          <div style="font-size:clamp(.62rem,1.3vw,.78rem);line-height:1.55;">업무지침만 두고 <strong>상위 규정(위임 근거) 없이</strong> 운영하면 안 됨 → 검사·감독 지적 사례 있음</div>
+        </div>
+        <div class="card card-border gold">
+          <div style="font-size:clamp(.62rem,1.3vw,.78rem);color:var(--gold);font-weight:700;margin-bottom:5px;">⚠ 주의사항 2</div>
+          <div style="font-size:clamp(.62rem,1.3vw,.78rem);line-height:1.55;">업무규정을 수정 없이 그대로 사용하면 <strong>회사의 업무 특성 미반영</strong>으로 지적받은 사례 있음</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑩ 개정 업무규정 달라진 점 -->
+  <section class="slide" id="s9">
+    <div class="tab" style="background:var(--tab3);"></div>
+    <div class="inner" style="padding-left:clamp(36px,6vw,90px);">
+      <div class="an">
+        <div class="sec-label">Section 3 &nbsp;·&nbsp; 개정 업무규정</div>
+        <div class="slide-h">개정 업무규정 — 달라진 점</div>
+        <div class="accent-bar" style="background:var(--tab3);"></div>
+      </div>
+      <div class="an" style="margin-bottom:clamp(10px,1.8vh,16px);">
+        <span class="badge br">2025. 5. 13. 시행</span>
+        <span style="font-size:clamp(.58rem,1.2vw,.75rem);color:var(--muted);margin-left:8px;">자금세탁방지 업무 책임성·전문성 강화</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:clamp(8px,1.4vh,13px);flex:1;" class="an">
+        <div class="nrow">
+          <div class="ncircle" style="background:var(--tab1);font-size:.6rem;width:clamp(42px,5vw,52px);height:clamp(28px,3.5vw,38px);border-radius:8px;">이사회</div>
+          <div>
+            <h4>업무지침 제정·개정·폐지 심의·의결 (전권사항)</h4>
+            <p>내부통제위원회가 이사회를 대신하여 의결 불가. 법규 개정에 따른 실질적 변동이 있는 경우 반드시 이사회 의결 필요</p>
+          </div>
+        </div>
+        <div class="nrow">
+          <div class="ncircle" style="background:var(--tab2);font-size:.58rem;width:clamp(42px,5vw,52px);height:clamp(28px,3.5vw,38px);border-radius:8px;">대표이사</div>
+          <div>
+            <h4>세부 업무지침 승인</h4>
+            <p>구체적 집행·기준·탄력적 운영을 위해 위임이 필요한 사항은 대표이사 승인의 '세부 업무지침'으로 규율 가능</p>
+          </div>
+        </div>
+        <div class="nrow">
+          <div class="ncircle" style="background:var(--tab3);font-size:.55rem;width:clamp(42px,5vw,52px);height:clamp(28px,3.5vw,38px);border-radius:8px;">보고책임자</div>
+          <div>
+            <h4>세부 업무지침의 실무적 운용</h4>
+            <p>세부 업무지침 마련 및 운용 등 실무적 운영 관련 사항은 보고책임자가 정할 수 있음</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑪ 핵심 정리 -->
+  <section class="slide" id="s10" style="background:var(--navy);">
+    <div class="inner">
+      <div class="an">
+        <div class="sec-label" style="color:rgba(255,255,255,.5);">Summary</div>
+        <div class="slide-h" style="color:white;">핵심 정리</div>
+        <div class="accent-bar" style="background:var(--gold);"></div>
+      </div>
+      <div class="g3 an" style="flex:1;">
+        <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:clamp(14px,2.5vh,24px);">
+          <div style="color:var(--tab1);font-size:clamp(1.2rem,3vw,2rem);margin-bottom:8px;">①</div>
+          <div style="color:white;font-size:clamp(.72rem,1.5vw,.92rem);font-weight:700;margin-bottom:8px;">내부통제제도</div>
+          <div style="color:rgba(255,255,255,.7);font-size:clamp(.6rem,1.25vw,.78rem);line-height:1.6;">금융회사가 자금세탁행위를 발견·분석·보고하는 핵심 역할 수행. 감독규정 제11조에 따라 위험평가체계, 독립감사, 교육·연수 의무화</div>
+        </div>
+        <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:clamp(14px,2.5vh,24px);">
+          <div style="color:var(--tab2);font-size:clamp(1.2rem,3vw,2rem);margin-bottom:8px;">②</div>
+          <div style="color:white;font-size:clamp(.72rem,1.5vw,.92rem);font-weight:700;margin-bottom:8px;">업무규정</div>
+          <div style="color:rgba(255,255,255,.7);font-size:clamp(.6rem,1.25vw,.78rem);line-height:1.6;">2010년 FATF 정회원 가입 대비 제정. STR·CTR·CDD 등 세부 절차 규율. 금융정보분석원 고시로 법적 구속력 보유</div>
+        </div>
+        <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:clamp(14px,2.5vh,24px);">
+          <div style="color:var(--tab3);font-size:clamp(1.2rem,3vw,2rem);margin-bottom:8px;">③</div>
+          <div style="color:white;font-size:clamp(.72rem,1.5vw,.92rem);font-weight:700;margin-bottom:8px;">업무지침 (2025 개정)</div>
+          <div style="color:rgba(255,255,255,.7);font-size:clamp(.6rem,1.25vw,.78rem);line-height:1.6;">이사회 전권 의결 → 대표이사 세부지침 승인 → 보고책임자 실무 운용의 3단계 체계. 상위 규정 없이 지침만 운용 금지</div>
+        </div>
+      </div>
+      <div class="an" style="text-align:center;color:rgba(255,255,255,.35);font-size:clamp(.58rem,1.2vw,.72rem);margin-top:clamp(10px,2vh,18px);">
+        내부통제 역량강화 1강 &nbsp;·&nbsp; 업무규정의 이해
+      </div>
+    </div>
+  </section>
+
+</div><!-- /wrapper -->
+
+<script>
+  const slides  = Array.from(document.querySelectorAll('.slide'));
+  const TOTAL   = slides.length;
+  const wrapper = document.getElementById('wrapper');
+  const bar     = document.getElementById('progress');
+  const dotsEl  = document.getElementById('dots');
+  const counter = document.getElementById('counter');
+  let cur = 0;
+
+  /* build dots */
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' on' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  function ui(idx) {
+    cur = idx;
+    bar.style.width = ((idx + 1) / TOTAL * 100) + '%';
+    counter.textContent = (idx + 1) + ' / ' + TOTAL;
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('on', i === idx));
+    slides.forEach((s, i) => s.classList.toggle('on', i === idx));
+  }
+
+  function goTo(idx) {
+    if (idx < 0 || idx >= TOTAL) return;
+    slides[idx].scrollIntoView({ behavior: 'smooth' });
+    ui(idx);
+  }
+
+  document.getElementById('prev').onclick = () => goTo(cur - 1);
+  document.getElementById('next').onclick = () => goTo(cur + 1);
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowDown','ArrowRight',' '].includes(e.key)) { e.preventDefault(); goTo(cur + 1); }
+    if (['ArrowUp','ArrowLeft'].includes(e.key))        { e.preventDefault(); goTo(cur - 1); }
+  });
+
+  let ty = 0;
+  wrapper.addEventListener('touchstart', e => { ty = e.touches[0].clientY; }, { passive: true });
+  wrapper.addEventListener('touchend',   e => {
+    const d = ty - e.changedTouches[0].clientY;
+    if (Math.abs(d) > 45) goTo(d > 0 ? cur + 1 : cur - 1);
+  });
+
+  let st;
+  wrapper.addEventListener('scroll', () => {
+    clearTimeout(st);
+    st = setTimeout(() => {
+      const mid = window.innerHeight / 2;
+      slides.forEach((s, i) => {
+        if (Math.abs(s.getBoundingClientRect().top) < mid) ui(i);
+      });
+    }, 80);
+  });
+
+  ui(0);
+</script>
+</body>
+</html>
